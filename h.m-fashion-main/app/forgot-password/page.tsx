@@ -6,31 +6,49 @@ import { Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Something went wrong');
+        setLoading(false);
+        return;
+      }
+
+      setSent(true);
+      toast.success('Reset link sent');
+
+      // In development, the API returns the reset URL for easy testing
+      if (data.resetUrl) {
+        setDevResetUrl(data.resetUrl);
+      }
+    } catch {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setSent(true);
-    toast.success('Reset link sent');
   };
 
   return (
-    <AuthLayout imageIndex={0} title="Forgot password" subtitle="We'll email you a secure link to reset your password">
+    <AuthLayout imageIndex={0} title="Forgot password" subtitle="We'll help you reset your password securely">
       {sent ? (
         <div className="rounded-2xl border bg-card p-6 text-center">
           <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
@@ -38,6 +56,17 @@ export default function ForgotPasswordPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             If an account exists for <span className="font-medium text-foreground">{email}</span>, a reset link is on its way.
           </p>
+          {devResetUrl && (
+            <div className="mt-4 rounded-lg border border-dashed border-amber-500/50 bg-amber-500/10 p-3">
+              <p className="text-xs font-medium text-amber-600 dark:text-amber-400">DEV MODE — Reset Link:</p>
+              <Link
+                href={devResetUrl.replace(window.location.origin, '')}
+                className="mt-1 block break-all text-xs text-accent hover:underline"
+              >
+                Click here to reset your password
+              </Link>
+            </div>
+          )}
           <Button asChild variant="lux" size="sm" className="mt-5 rounded-full">
             <Link href="/login">Back to sign in</Link>
           </Button>

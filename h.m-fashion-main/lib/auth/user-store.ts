@@ -212,3 +212,37 @@ export async function upsertAdminUser(input: {
   });
   return mongoToPublic(user);
 }
+
+/** Find a user by email (for password reset flow). */
+export async function findUserByEmail(email: string): Promise<PublicUser | null> {
+  const normalized = email.toLowerCase();
+
+  if (useLocalUserStore()) {
+    const user = await localFindUserByEmail(normalized);
+    return user ? storedToPublic(user) : null;
+  }
+
+  if (!isMongoConfigured()) return null;
+  await connectDB();
+  const user = await User.findOne({ email: normalized });
+  return user ? mongoToPublic(user) : null;
+}
+
+/** Update a user's password by ID (for password reset flow). */
+export async function updateUserPasswordById(id: string, newPassword: string): Promise<boolean> {
+  const hashed = await hashPassword(newPassword);
+
+  if (useLocalUserStore()) {
+    const updated = await localUpdateUserPassword(id, hashed);
+    return updated !== null;
+  }
+
+  if (!isMongoConfigured()) return false;
+  await connectDB();
+  const user = await User.findById(id).select('+password');
+  if (!user) return false;
+  user.password = hashed;
+  await user.save();
+  return true;
+}
+

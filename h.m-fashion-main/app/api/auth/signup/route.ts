@@ -25,15 +25,15 @@ export async function POST(req: NextRequest) {
       role: publicUser.role,
     });
 
-    cookies().set(getTokenCookieName(), token, getTokenCookieOptions());
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Account created successfully',
       user: publicUser,
       token,
       redirectTo: getPostAuthRedirect(publicUser.role, next),
     });
+    response.cookies.set(getTokenCookieName(), token, getTokenCookieOptions());
+    return response;
   } catch (error) {
     console.error('[auth/signup]', error);
     const message = error instanceof Error ? error.message : 'Unable to create account. Please try again.';
