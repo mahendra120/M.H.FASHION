@@ -80,8 +80,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             </motion.span>
           </button>
 
-          {/* Quick add */}
-          <div className={cn('absolute inset-x-3 bottom-3 transition-all duration-500', hover ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0')}>
+          {/* Quick add — always visible on touch devices, hover-revealed on devices that support hover */}
+          <div
+            className={cn(
+              'absolute inset-x-3 bottom-3 translate-y-0 opacity-100 transition-all duration-500',
+              'md:translate-y-4 md:opacity-0',
+              hover && 'md:translate-y-0 md:opacity-100',
+            )}
+          >
             <Button
               variant="lux-light"
               size="sm"
@@ -99,10 +105,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
       <div className="mt-3 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <Link href={`/product/${product.slug}`} className="line-clamp-1 text-sm font-medium tracking-tight hover:text-accent transition-colors">
+          <Link href={`/product/${product.slug}`} className="line-clamp-1 min-w-0 flex-1 text-sm font-medium tracking-tight hover:text-accent transition-colors">
             {product.title}
           </Link>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
             <span className="text-amber-500">★</span>
             <span>{product.rating.toFixed(1)}</span>
           </div>

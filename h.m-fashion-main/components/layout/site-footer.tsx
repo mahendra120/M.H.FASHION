@@ -33,7 +33,7 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
     title: 'Support',
     links: [
       { label: 'Shipping & Returns', href: '/faq' },
-      { label: 'Track Order', href: '/track' },
+      { label: 'Track Order', href: '/account/orders' },
       { label: 'Privacy Policy', href: '/privacy' },
       { label: 'Terms & Conditions', href: '/terms' },
     ],

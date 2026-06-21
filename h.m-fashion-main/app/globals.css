@@ -57,10 +57,21 @@
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    width: 100%;
   }
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "ss01", "cv11";
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 0;
+  }
+  img,
+  video,
+  svg {
+    max-width: 100%;
+    height: auto;
   }
   ::selection {
     @apply bg-accent/30 text-foreground;

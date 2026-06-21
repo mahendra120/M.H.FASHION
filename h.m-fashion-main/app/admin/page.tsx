@@ -116,10 +116,10 @@ export default function AdminDashboardPage() {
           </div>
           <ul className="divide-y">
             {stats?.recentOrders.map((o) => (
-              <li key={o.id} className="flex items-center justify-between py-2.5 text-sm">
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 text-sm">
                 <span className="font-mono">#{o.id.slice(0, 8).toUpperCase()}</span>
-                <span className="text-xs text-muted-foreground">{formatDate(o.created_at)}</span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{o.order_status}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(o.created_at)}</span>
                 <span className="font-medium">{formatPrice(Number(o.total_amount))}</span>
               </li>
             )) ?? [...Array(4)].map((_, i) => <Skeleton key={i} className="h-10" />)}

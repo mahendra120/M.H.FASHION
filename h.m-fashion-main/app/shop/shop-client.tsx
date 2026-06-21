@@ -67,6 +67,7 @@ export function ShopClient({
     setProducts(initialProducts);
     setTotal(initialTotal);
     setPage(1);
+    setQuery(q);
   }, [cat, q, initialProducts, initialTotal]);
 
   // Fetch with all filters

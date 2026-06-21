@@ -96,8 +96,8 @@ function BannerForm({ banner, onClose, onSaved }: { banner: Banner | null; onClo
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] grid place-items-center bg-background/70 p-4 backdrop-blur" onClick={onClose}>
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-md rounded-2xl bg-card p-6 lux-shadow-lg" onClick={(e) => e.stopPropagation()}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-background/70 p-4 backdrop-blur" onClick={onClose}>
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="my-6 w-full max-w-md rounded-2xl bg-card p-6 lux-shadow-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-xl font-semibold">{banner ? 'Edit banner' : 'New banner'}</h2>
           <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>

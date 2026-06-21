@@ -70,9 +70,9 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
                 </div>
                 {i < steps.length - 1 && <div className={`h-px flex-1 ${s.complete ? 'bg-success' : 'bg-border'}`} />}
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-xs font-medium">{s.label}</p>
-                <p className="text-[10px] text-muted-foreground">{s.date}</p>
+              <div className="mt-2 max-w-[80px] text-center">
+                <p className="truncate text-xs font-medium">{s.label}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{s.date}</p>
               </div>
             </div>
           ))}
@@ -89,8 +89,8 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
                 <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                   {item.image && <Image src={item.image} alt={item.title} fill sizes="64px" className="object-cover" />}
                 </div>
-                <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-medium">{item.title}</span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="line-clamp-2 text-sm font-medium">{item.title}</span>
                   <span className="text-xs text-muted-foreground">{item.size} · {item.color} · Qty {item.quantity}</span>
                   <span className="text-sm font-semibold">{formatPrice(Number(item.price) * item.quantity)}</span>
                 </div>
@@ -99,7 +99,7 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
           </ul>
           <div className="mt-5 flex items-start gap-2 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
             <Truck className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Shipping to <span className="font-medium text-foreground">{order.shipping_address.full_name}</span>, {order.shipping_address.line1}, {order.shipping_address.city}, {order.shipping_address.state} - {order.shipping_address.pincode}</span>
+            <span className="min-w-0 break-words">Shipping to <span className="font-medium text-foreground">{order.shipping_address.full_name}</span>, {order.shipping_address.line1}, {order.shipping_address.city}, {order.shipping_address.state} - {order.shipping_address.pincode}</span>
           </div>
         </div>
 

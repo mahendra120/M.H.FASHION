@@ -50,7 +50,7 @@ export function SiteHeader() {
         <div className="hidden items-center justify-between border-b border-border/40 px-6 text-[11px] uppercase tracking-[0.2em] text-muted-foreground lg:flex">
           <span>Complimentary shipping over ₹1499 · 30-day returns</span>
           <div className="flex items-center gap-4">
-            <Link href="/track" className="hover:text-foreground">Track order</Link>
+            <Link href="/account/orders" className="hover:text-foreground">Track order</Link>
             <Link href="/contact" className="hover:text-foreground">Help</Link>
           </div>
         </div>

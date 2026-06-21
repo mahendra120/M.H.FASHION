@@ -96,16 +96,28 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
           </div>
         </aside>
 
-        <div className="flex-1">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-card px-4 py-3 lg:hidden">
-            <Link href="/" className="font-display text-lg font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
-            <div className="flex gap-2">
-              {NAV.slice(0, 4).map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} className={cn('grid h-9 w-9 place-items-center rounded-lg', pathname === href ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-                  <Icon className="h-4 w-4" />
-                </Link>
-              ))}
+        <div className="flex-1 min-w-0">
+          <header className="sticky top-0 z-30 border-b bg-card px-4 py-3 lg:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <Link href="/" className="shrink-0 font-display text-lg font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
             </div>
+            <nav className="no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto">
+              {NAV.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href || (href !== '/admin' && pathname.startsWith(href));
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap',
+                      active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" /> {label}
+                  </Link>
+                );
+              })}
+            </nav>
           </header>
 
           <main className="p-5 sm:p-8">

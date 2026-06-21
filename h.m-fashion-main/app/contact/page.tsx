@@ -113,10 +113,10 @@ export default function ContactPage() {
 function ContactCard({ icon, label, value, href }: { icon: React.ReactNode; label: string; value: string; href?: string }) {
   const inner = (
     <div className="flex items-start gap-3 rounded-2xl border bg-card p-5 transition hover:border-accent">
-      <div className="grid h-11 w-11 place-items-center rounded-full bg-muted text-foreground">{icon}</div>
-      <div>
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-foreground">{icon}</div>
+      <div className="min-w-0">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium">{value}</p>
+        <p className="break-words text-sm font-medium">{value}</p>
       </div>
     </div>
   );

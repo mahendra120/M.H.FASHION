@@ -24,14 +24,14 @@ export function WhatsAppButton() {
   )}`;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[80] flex flex-col items-end gap-2">
+    <div className="fixed bottom-5 right-4 z-[80] flex flex-col items-end gap-2 sm:right-5">
       <AnimatePresence>
         {bubble && !open && (
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.9 }}
-            className="glass-strong max-w-[220px] rounded-2xl p-3 text-sm lux-shadow"
+            className="glass-strong relative max-w-[calc(100vw-2.5rem)] rounded-2xl p-3 pr-8 text-sm lux-shadow sm:max-w-[220px]"
           >
             <button onClick={() => setBubble(false)} className="absolute right-2 top-2 text-muted-foreground" aria-label="Dismiss">
               <X className="h-3.5 w-3.5" />
@@ -60,12 +60,12 @@ export function WhatsAppButton() {
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="glass-strong w-72 rounded-3xl p-4 lux-shadow-lg"
+            className="glass-strong w-[calc(100vw-2.5rem)] max-w-72 rounded-3xl p-4 lux-shadow-lg"
           >
             <div className="flex items-center gap-2 border-b pb-3">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-success/15 text-success">●</div>
-              <div>
-                <p className="text-sm font-semibold">{BRAND.name} Concierge</p>
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-success/15 text-success">●</div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{BRAND.name} Concierge</p>
                 <p className="text-[10px] text-muted-foreground">Typically replies instantly</p>
               </div>
             </div>
