@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, MotionSpan, SafeAnimatePresence } from '@/components/safe-motion';
 import { ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, Star, Truck, RefreshCw, ShieldCheck, ZoomIn, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
@@ -130,8 +130,8 @@ export function ProductDetailClient({
             className="relative aspect-[4/5] cursor-zoom-in overflow-hidden rounded-2xl bg-muted"
             onClick={() => setZoom(true)}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
+            <SafeAnimatePresence mode="wait">
+              <MotionDiv
                 key={activeImage}
                 initial={{ opacity: 0, scale: 1.04 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -147,8 +147,8 @@ export function ProductDetailClient({
                   sizes="(max-width:1024px) 100vw, 50vw"
                   className="object-cover"
                 />
-              </motion.div>
-            </AnimatePresence>
+              </MotionDiv>
+            </SafeAnimatePresence>
             <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-background/80 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur">
               <ZoomIn className="h-3 w-3" /> Click to zoom
             </div>
@@ -281,9 +281,9 @@ export function ProductDetailClient({
                 </button>
               </div>
               <Button variant="outline" size="icon" className="h-12 w-12 rounded-full" onClick={() => toggle(product)} aria-label="Wishlist">
-                <motion.span ref={likedHeart} animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{ duration: 0.4 }}>
+                <MotionSpan ref={likedHeart} animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{ duration: 0.4 }}>
                   <Heart className={cn('h-5 w-5', liked && 'fill-destructive text-destructive')} />
-                </motion.span>
+                </MotionSpan>
               </Button>
             </div>
             <div className="flex flex-1 gap-3">
@@ -420,26 +420,26 @@ export function ProductDetailClient({
       )}
 
       {/* Zoom modal */}
-      <AnimatePresence>
+      <SafeAnimatePresence>
         {zoom && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setZoom(false)}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6"
           >
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
               className="relative h-[80vh] aspect-[4/5]"
               onClick={(e) => e.stopPropagation()}
             >
               <Image src={product.images[activeImage]} alt={product.title} fill sizes="80vh" className="object-contain" />
-            </motion.div>
+            </MotionDiv>
             <button className="absolute right-6 top-6 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white" onClick={() => setZoom(false)}>
               <Plus className="h-6 w-6 rotate-45" />
             </button>
-          </motion.div>
+          </MotionDiv>
         )}
-      </AnimatePresence>
+      </SafeAnimatePresence>
     </div>
   );
 }

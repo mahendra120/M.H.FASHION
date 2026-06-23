@@ -1,12 +1,14 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WHATSAPP_NUMBER, BRAND } from '@/lib/constants';
+import { MotionDiv, MotionSpan, SafeAnimatePresence } from '@/components/safe-motion';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 export function WhatsAppButton() {
+  const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const [bubble, setBubble] = useState(false);
 
@@ -23,11 +25,13 @@ export function WhatsAppButton() {
     `Hi ${BRAND.name} team, I have a question about an order.`,
   )}`;
 
+  if (!hydrated) return null;
+
   return (
     <div className="fixed bottom-5 right-4 z-[80] flex flex-col items-end gap-2 sm:right-5">
-      <AnimatePresence>
+      <SafeAnimatePresence>
         {bubble && !open && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 8, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.9 }}
@@ -38,9 +42,9 @@ export function WhatsAppButton() {
             </button>
             <p className="font-medium">Need a hand?</p>
             <p className="text-xs text-muted-foreground">Chat with our concierge — we usually reply in minutes.</p>
-          </motion.div>
+          </MotionDiv>
         )}
-      </AnimatePresence>
+      </SafeAnimatePresence>
 
       <Button
         onClick={() => setOpen((v) => !v)}
@@ -49,14 +53,14 @@ export function WhatsAppButton() {
         aria-label="WhatsApp support"
         className="h-14 w-14 rounded-full lux-shadow-lg hover:scale-105"
       >
-        <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.3 }}>
+        <MotionSpan animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.3 }}>
           {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
-        </motion.span>
+        </MotionSpan>
       </Button>
 
-      <AnimatePresence>
+      <SafeAnimatePresence>
         {open && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
@@ -77,9 +81,9 @@ export function WhatsAppButton() {
                 Open WhatsApp chat
               </a>
             </Button>
-          </motion.div>
+          </MotionDiv>
         )}
-      </AnimatePresence>
+      </SafeAnimatePresence>
     </div>
   );
 }

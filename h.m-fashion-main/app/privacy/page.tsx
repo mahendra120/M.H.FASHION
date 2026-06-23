@@ -1,4 +1,5 @@
 import { PublicLayout } from '@/components/layout/public-layout';
+import { LEGAL_LAST_UPDATED } from '@/lib/constants';
 
 const SECTIONS = [
   {
@@ -43,7 +44,7 @@ export default function PrivacyPage() {
   return (
     <PublicLayout title="Privacy Policy">
       <div className="container-lux max-w-3xl pb-24">
-        <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+        <p className="text-sm text-muted-foreground">Last updated: {LEGAL_LAST_UPDATED}</p>
         <div className="mt-8 space-y-8">
           {SECTIONS.map((s) => (
             <section key={s.h}>

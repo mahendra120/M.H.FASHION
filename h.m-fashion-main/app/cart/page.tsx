@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, MotionLi, SafeAnimatePresence } from '@/components/safe-motion';
 import { ArrowRight, Minus, Plus, ShoppingBag, Tag, Trash2, X, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +95,7 @@ export default function CartPage() {
               )}
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <motion.div
+              <MotionDiv
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
                 transition={{ duration: 0.5 }}
@@ -110,9 +110,9 @@ export default function CartPage() {
           </div>
 
           <ul className="mt-4 flex flex-col gap-4">
-            <AnimatePresence>
+            <SafeAnimatePresence>
               {items.map((item) => (
-                <motion.li
+                <MotionLi
                   key={`${item.product_id}-${item.size}-${item.color}`}
                   layout
                   initial={{ opacity: 0, y: 10 }}
@@ -146,9 +146,9 @@ export default function CartPage() {
                       <span className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</span>
                     </div>
                   </div>
-                </motion.li>
+                </MotionLi>
               ))}
-            </AnimatePresence>
+            </SafeAnimatePresence>
           </ul>
         </div>
 

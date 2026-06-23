@@ -1,3 +1,6 @@
+/** Static legal pages date — avoids SSR/client locale drift. */
+export const LEGAL_LAST_UPDATED = '22 June 2025';
+
 export const FREE_SHIPPING_THRESHOLD = 1499;
 export const WHATSAPP_NUMBER = '919000000000';
 export const BRAND = {

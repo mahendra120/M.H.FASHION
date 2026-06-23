@@ -1,6 +1,7 @@
 import { isAdminEmail } from '@/lib/admin-auth';
 import { authLog } from '@/lib/auth/debug';
-import { type PublicUser, upsertAdminUser } from '@/lib/auth/user-store';
+import { type PublicUser } from '@/lib/auth/client';
+import { upsertAdminUser } from '@/lib/auth/user-store';
 
 function getSeedCredentials(): { email: string; password: string; name: string } | null {
   const email = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase();

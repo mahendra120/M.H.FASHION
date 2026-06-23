@@ -2,14 +2,15 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArrowRight, ArrowUpRight, Star, ShieldCheck, Truck, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Reveal, StaggerGroup, StaggerItem, Parallax } from '@/components/motion';
+import { LazyWhenVisible } from '@/components/lazy-when-visible';
 import { formatPrice } from '@/lib/format';
+import { optimizeImageUrl, IMAGE_WIDTHS } from '@/lib/image-utils';
 import type { Product, Category, Banner } from '@/types';
 
 const TESTIMONIALS = [
@@ -41,88 +42,55 @@ export function HomeClient({
   banners: Banner[];
 }) {
   const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const hero = banners[0];
+
+  const heroBackground = hero ? (
+    <>
+      <Image
+        src={hero.image}
+        alt={hero.title}
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />
+    </>
+  ) : null;
 
   return (
     <PublicLayout>
       {/* ===== HERO ===== */}
       <section ref={heroRef} className="relative h-[92vh] min-h-[640px] w-full overflow-hidden">
-        {hero && (
-          <motion.div style={{ y: heroY, scale: heroScale, opacity: heroOpacity }} className="absolute inset-0">
-            <Image
-              src={hero.image}
-              alt={hero.title}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-              style={{ width: '100%', height: '100%' }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />
-          </motion.div>
-        )}
+        {hero && <div className="absolute inset-0">{heroBackground}</div>}
         <div className="container-lux relative flex h-full flex-col justify-end pb-20 text-white">
-          <motion.span
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/30 px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] backdrop-blur"
-          >
+          <span className="hero-fade-in mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/30 px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] backdrop-blur [animation-delay:0.15s]">
             <Sparkles className="h-3.5 w-3.5" /> FW Limited Edition
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-5xl font-bold leading-[0.95] tracking-tight text-shadow-lux sm:text-7xl lg:text-8xl"
-          >
+          </span>
+          <h1 className="hero-fade-in font-display text-5xl font-bold leading-[0.95] tracking-tight text-shadow-lux sm:text-7xl lg:text-8xl [animation-delay:0.25s]">
             Wear<br />Confidence.
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="mt-5 max-w-md text-base text-white/80 sm:text-lg"
-          >
+          </h1>
+          <p className="hero-fade-in mt-5 max-w-md text-base text-white/80 sm:text-lg [animation-delay:0.35s]">
             Elevated essentials in limited runs — built for those who refuse to blend in.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.55 }}
-            className="mt-8 flex flex-wrap items-center gap-3"
-          >
+          </p>
+          <div className="hero-fade-in mt-8 flex flex-wrap items-center gap-3 [animation-delay:0.45s]">
             <Button asChild variant="accent" size="xl" className="rounded-full">
               <Link href="/shop">Shop the collection <ArrowRight className="h-4 w-4" /></Link>
             </Button>
             <Button asChild variant="outline" size="xl" className="rounded-full border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white hover:text-primary">
               <Link href="/shop?cat=hoodies">Explore hoodies</Link>
             </Button>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Scroll cue */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60"
-        >
+        <div className="scroll-cue absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60">
           <div className="flex flex-col items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
             <div className="h-8 w-px bg-white/40">
-              <motion.div
-                animate={{ y: [0, 24, 0], opacity: [1, 0, 1] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                className="h-3 w-px bg-white"
-              />
+              <div className="scroll-cue-line h-3 w-px bg-white" />
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ===== Marquee value strip ===== */}
@@ -164,9 +132,12 @@ export function HomeClient({
       </section>
 
       {/* ===== Best Sellers ===== */}
-      <ProductRow title="Best sellers" eyebrow="Customer favourites" products={bestSellers} viewAllHref="/shop?sort=popular" />
+      <LazyWhenVisible minHeight={420}>
+        <ProductRow title="Best sellers" eyebrow="Customer favourites" products={bestSellers} viewAllHref="/shop?sort=popular" />
+      </LazyWhenVisible>
 
       {/* ===== Limited offer banner ===== */}
+      <LazyWhenVisible minHeight={180}>
       <section className="container-lux py-12">
         <Parallax intensity={30}>
           <div className="relative overflow-hidden rounded-3xl bg-primary p-8 text-primary-foreground sm:p-14">
@@ -186,11 +157,15 @@ export function HomeClient({
           </div>
         </Parallax>
       </section>
+      </LazyWhenVisible>
 
       {/* ===== New Arrivals ===== */}
-      <ProductRow title="New arrivals" eyebrow="Just landed" products={newArrivals} viewAllHref="/shop?new=true" />
+      <LazyWhenVisible minHeight={420}>
+        <ProductRow title="New arrivals" eyebrow="Just landed" products={newArrivals} viewAllHref="/shop?new=true" />
+      </LazyWhenVisible>
 
       {/* ===== Featured showcase ===== */}
+      <LazyWhenVisible minHeight={480}>
       <section className="bg-secondary py-20">
         <div className="container-lux">
           <Reveal>
@@ -211,8 +186,10 @@ export function HomeClient({
           </StaggerGroup>
         </div>
       </section>
+      </LazyWhenVisible>
 
       {/* ===== Stats ===== */}
+      <LazyWhenVisible minHeight={160}>
       <section className="container-lux py-20">
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
           {STATS.map((s, i) => (
@@ -225,11 +202,15 @@ export function HomeClient({
           ))}
         </div>
       </section>
+      </LazyWhenVisible>
 
       {/* ===== Trending ===== */}
-      <ProductRow title="Trending now" eyebrow="Hot this week" products={trending} viewAllHref="/shop?trending=true" />
+      <LazyWhenVisible minHeight={420}>
+        <ProductRow title="Trending now" eyebrow="Hot this week" products={trending} viewAllHref="/shop?trending=true" />
+      </LazyWhenVisible>
 
       {/* ===== Testimonials ===== */}
+      <LazyWhenVisible minHeight={360}>
       <section className="bg-primary py-20 text-primary-foreground">
         <div className="container-lux">
           <Reveal>
@@ -263,8 +244,10 @@ export function HomeClient({
           </StaggerGroup>
         </div>
       </section>
+      </LazyWhenVisible>
 
       {/* ===== Social showcase ===== */}
+      <LazyWhenVisible minHeight={320}>
       <section className="container-lux py-20">
         <Reveal>
           <div className="mb-8 text-center">
@@ -278,10 +261,11 @@ export function HomeClient({
             <StaggerItem key={`${p.id}-ig-${i}`}>
               <Link href={`/product/${p.slug}`} className="group relative block aspect-square overflow-hidden rounded-xl bg-muted">
                 <Image
-                  src={p.images[0]}
+                  src={optimizeImageUrl(p.images[0], IMAGE_WIDTHS.social)}
                   alt={p.title}
                   fill
                   sizes="(max-width:640px) 50vw, 16vw"
+                  loading="lazy"
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -292,6 +276,7 @@ export function HomeClient({
           ))}
         </StaggerGroup>
       </section>
+      </LazyWhenVisible>
     </PublicLayout>
   );
 }
@@ -343,6 +328,7 @@ function CategoryTile({ cat }: { cat: Category }) {
         alt={cat.name}
         fill
         sizes="(max-width:640px) 50vw, 20vw"
+        loading="lazy"
         className="object-cover transition-transform duration-700 group-hover:scale-110"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

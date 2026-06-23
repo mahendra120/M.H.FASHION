@@ -2,10 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { MotionDiv } from '@/components/safe-motion';
 import { Check, Package, Truck, Home, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatPrice, formatDate } from '@/lib/format';
+import { FormattedDate } from '@/components/formatted-date';
+import { formatPrice } from '@/lib/format';
 import type { Order } from '@/types';
 import { toast } from 'sonner';
 
@@ -16,23 +17,23 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
   const ship = Number(order.shipping);
 
   const steps = [
-    { label: 'Order placed', date: formatDate(order.created_at), complete: true },
-    { label: 'Processing', date: 'Within 24h', complete: order.order_status !== 'pending' },
-    { label: 'Shipped', date: '1-2 days', complete: ['shipped', 'delivered'].includes(order.order_status) },
-    { label: 'Delivered', date: '3-5 days', complete: order.order_status === 'delivered' },
+    { label: 'Order placed', dateIso: order.created_at, dateStatic: null, complete: true },
+    { label: 'Processing', dateIso: null, dateStatic: 'Within 24h', complete: order.order_status !== 'pending' },
+    { label: 'Shipped', dateIso: null, dateStatic: '1-2 days', complete: ['shipped', 'delivered'].includes(order.order_status) },
+    { label: 'Delivered', dateIso: null, dateStatic: '3-5 days', complete: order.order_status === 'delivered' },
   ];
 
   return (
     <div className="container-lux py-16">
-      <motion.div
+      <MotionDiv
         initial={{ scale: 0, rotate: -45 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 240, damping: 18 }}
         className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success text-white"
       >
         <Check className="h-9 w-9" strokeWidth={3} />
-      </motion.div>
-      <motion.div
+      </MotionDiv>
+      <MotionDiv
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -42,7 +43,7 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
         <p className="mt-2 text-sm text-muted-foreground">
           A confirmation has been sent to <span className="font-medium text-foreground">{order.shipping_address.email}</span>
         </p>
-      </motion.div>
+      </MotionDiv>
 
       <div className="mx-auto mt-8 flex max-w-md items-center justify-between gap-2 rounded-full border bg-card px-4 py-2 text-sm">
         <span className="text-muted-foreground">Order ID</span>
@@ -72,7 +73,13 @@ export function OrderConfirmationClient({ order }: { order: Order }) {
               </div>
               <div className="mt-2 max-w-[80px] text-center">
                 <p className="truncate text-xs font-medium">{s.label}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{s.date}</p>
+                <p className="truncate text-[10px] text-muted-foreground">
+                  {s.dateIso ? (
+                    <FormattedDate iso={s.dateIso} />
+                  ) : (
+                    s.dateStatic
+                  )}
+                </p>
               </div>
             </div>
           ))}

@@ -64,7 +64,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
       <div className="flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-card lg:flex">
           <div className="border-b px-5 py-4">
-            <Link href="/" className="font-display text-lg font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
+            <Link href="/" className="font-brand text-2xl font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Admin console</p>
           </div>
           <nav className="flex-1 space-y-0.5 p-3">
@@ -99,7 +99,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
         <div className="flex-1 min-w-0">
           <header className="sticky top-0 z-30 border-b bg-card px-4 py-3 lg:hidden">
             <div className="flex items-center justify-between gap-3">
-              <Link href="/" className="shrink-0 font-display text-lg font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
+              <Link href="/" className="shrink-0 font-brand text-2xl font-bold">M.H<span className="text-accent">.</span>Fashion</Link>
             </div>
             <nav className="no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto">
               {NAV.map(({ href, label, icon: Icon }) => {

@@ -7,7 +7,7 @@ import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
 import { useWishlist } from '@/components/providers/wishlist-provider';
 import { formatPrice } from '@/lib/format';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, SafeAnimatePresence } from '@/components/safe-motion';
 
 export default function WishlistPage() {
   const { items, remove } = useWishlist();
@@ -30,9 +30,9 @@ export default function WishlistPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <AnimatePresence>
+            <SafeAnimatePresence>
               {items.map((item) => (
-                <motion.div
+                <MotionDiv
                   key={item.product_id}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -56,9 +56,9 @@ export default function WishlistPage() {
                     <Link href={`/product/${item.slug}`} className="line-clamp-1 text-sm font-medium hover:text-accent">{item.title}</Link>
                     <p className="text-sm font-semibold">{formatPrice(item.price)}</p>
                   </div>
-                </motion.div>
+                </MotionDiv>
               ))}
-            </AnimatePresence>
+            </SafeAnimatePresence>
           </div>
         )}
       </div>

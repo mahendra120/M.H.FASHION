@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Instagram, Twitter, Facebook, Youtube, Mail, ArrowUpRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CopyrightYear } from '@/components/copyright-year';
 import { BRAND } from '@/lib/constants';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -61,13 +61,7 @@ export function SiteFooter() {
       {/* Newsletter */}
       <div className="container-lux border-b border-white/10 py-16">
         <div className="grid items-center gap-8 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.3em] text-accent">Newsletter</p>
             <h3 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
               Early access. Private sales. No noise.
@@ -75,7 +69,7 @@ export function SiteFooter() {
             <p className="text-sm text-primary-foreground/70">
               Join the inner circle — be the first to see every drop.
             </p>
-          </motion.div>
+          </div>
           <form onSubmit={submit} className="flex w-full items-center gap-2">
             <div className="relative flex-1">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-foreground/60" />
@@ -97,7 +91,7 @@ export function SiteFooter() {
       {/* Columns */}
       <div className="container-lux grid gap-10 py-16 md:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-4 lg:col-span-2">
-          <Link href="/" className="font-nunito text-2xl font-bold">
+          <Link href="/" className="font-brand text-3xl font-bold">
             M.H<span className="text-accent">.</span>Fashion
           </Link>
           <p className="max-w-sm text-sm text-primary-foreground/70">
@@ -138,7 +132,7 @@ export function SiteFooter() {
       {/* Bottom bar */}
       <div className="border-t border-white/10 py-6">
         <div className="container-lux flex flex-col items-center justify-between gap-4 text-xs text-primary-foreground/60 sm:flex-row">
-          <span>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</span>
+          <CopyrightYear />
           <div className="flex items-center gap-3">
             <span>Secured payments</span>
             <span aria-hidden>·</span>

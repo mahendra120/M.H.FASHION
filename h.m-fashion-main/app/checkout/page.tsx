@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { MotionDiv, MotionP } from '@/components/safe-motion';
 import { CreditCard, Smartphone, Truck, Lock, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,10 +30,19 @@ export default function CheckoutPage() {
   const { user, loading } = useAuth();
   const requireAuth = useRequireAuthForCheckout();
 
-  const storedCode = typeof window !== 'undefined' ? sessionStorage.getItem('mhf_coupon') : null;
-  const storedDiscount = Number(typeof window !== 'undefined' ? sessionStorage.getItem('mhf_discount') ?? '0' : '0');
-  const couponCode = storedCode || null;
-  const discount = storedDiscount;
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
+
+  useEffect(() => {
+    try {
+      setCouponCode(sessionStorage.getItem('mhf_coupon'));
+      setDiscount(Number(sessionStorage.getItem('mhf_discount') ?? '0'));
+    } catch {
+      setCouponCode(null);
+      setDiscount(0);
+    }
+  }, []);
+
   const shipping = subtotal - discount >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
   const total = Math.max(0, subtotal - discount) + shipping;
 
@@ -227,7 +236,7 @@ export default function CheckoutPage() {
             </div>
 
             {method === 'card' && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid gap-3 sm:grid-cols-2">
+              <MotionDiv initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2"><Field label="Card number" value="" onChange={() => {}} placeholder="4242 4242 4242 4242" /></div>
                 <Field label="Name on card" value="" onChange={() => {}} />
                 <div className="grid grid-cols-2 gap-3">
@@ -237,17 +246,17 @@ export default function CheckoutPage() {
                 <p className="sm:col-span-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Lock className="h-3 w-3" /> Encrypted end-to-end. We never store card details.
                 </p>
-              </motion.div>
+              </MotionDiv>
             )}
             {method === 'upi' && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4">
+              <MotionDiv initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4">
                 <Field label="UPI ID" value="" onChange={() => {}} placeholder="yourname@upi" />
-              </motion.div>
+              </MotionDiv>
             )}
             {method === 'cod' && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              <MotionP initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
                 Pay in cash when your order arrives. A small handling fee of ₹20 applies for COD orders.
-              </motion.p>
+              </MotionP>
             )}
           </section>
         </div>

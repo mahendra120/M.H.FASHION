@@ -3,14 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
+import { optimizeImageUrl, IMAGE_WIDTHS } from '@/lib/image-utils';
+import { MotionDiv } from '@/components/safe-motion';
 
 const IMAGES = [
-  'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg',
-  'https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg',
-  'https://images.pexels.com/photos/6311662/pexels-photo-6311662.jpeg',
+  optimizeImageUrl('https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg', IMAGE_WIDTHS.hero),
+  optimizeImageUrl('https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg', IMAGE_WIDTHS.hero),
+  optimizeImageUrl('https://images.pexels.com/photos/6311662/pexels-photo-6311662.jpeg', IMAGE_WIDTHS.hero),
 ];
 
 export function AuthLayout({
@@ -32,10 +33,10 @@ export function AuthLayout({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
         <div className="absolute inset-0 flex flex-col justify-between p-10 text-white">
-          <Link href="/" className="font-display text-2xl font-bold">
+          <Link href="/" className="font-brand text-3xl font-bold">
             M.H<span className="text-accent">.</span>Fashion
           </Link>
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
@@ -49,25 +50,25 @@ export function AuthLayout({
             <p className="mt-3 max-w-md text-sm text-white/80">
               Join the inner circle for early access to drops, private sales and member-only pieces.
             </p>
-          </motion.div>
+          </MotionDiv>
         </div>
       </div>
 
       {/* Form side */}
       <div className="flex items-center justify-center bg-background px-6 py-12">
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-sm"
         >
-          <Link href="/" className="mb-8 block font-display text-2xl font-bold lg:hidden">
+          <Link href="/" className="mb-8 block font-brand text-3xl font-bold lg:hidden">
             M.H<span className="text-accent">.</span>Fashion
           </Link>
           <h1 className="font-display text-3xl font-bold">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
           <div className="mt-8">{children}</div>
-        </motion.div>
+        </MotionDiv>
       </div>
     </div>
   );

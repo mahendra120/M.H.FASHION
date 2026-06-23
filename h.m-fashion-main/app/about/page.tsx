@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { MotionSpan, MotionH1, MotionP } from '@/components/safe-motion';
 import { ArrowRight, Leaf, ShieldCheck, Star, Users } from 'lucide-react';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
@@ -25,30 +25,30 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/30" />
         </div>
         <div className="container-lux relative text-white">
-          <motion.span
+          <MotionSpan
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-xs uppercase tracking-[0.3em] text-accent"
           >
             Our story
-          </motion.span>
-          <motion.h1
+          </MotionSpan>
+          <MotionH1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className="mt-3 max-w-2xl font-display text-4xl font-bold leading-tight text-shadow-lux sm:text-6xl"
           >
             A house built for those who refuse to blend in.
-          </motion.h1>
-          <motion.p
+          </MotionH1>
+          <MotionP
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mt-4 max-w-xl text-white/80"
           >
             M.H.Fashion is an independent atelier crafting elevated essentials — tees, hoodies, caps, posters and covers — in limited weekly runs.
-          </motion.p>
+          </MotionP>
         </div>
       </section>
 

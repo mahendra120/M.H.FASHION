@@ -1,4 +1,5 @@
 import { PublicLayout } from '@/components/layout/public-layout';
+import { LEGAL_LAST_UPDATED } from '@/lib/constants';
 
 const SECTIONS = [
   { h: '1. Acceptance of terms', p: 'By accessing or using M.H.Fashion you agree to be bound by these Terms. If you do not agree, please discontinue use of the site.' },
@@ -18,7 +19,7 @@ export default function TermsPage() {
   return (
     <PublicLayout title="Terms & Conditions">
       <div className="container-lux max-w-3xl pb-24">
-        <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+        <p className="text-sm text-muted-foreground">Last updated: {LEGAL_LAST_UPDATED}</p>
         <div className="mt-8 space-y-8">
           {SECTIONS.map((s) => (
             <section key={s.h}>

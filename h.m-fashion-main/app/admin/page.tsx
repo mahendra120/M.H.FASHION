@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Package, IndianRupee, Users, ShoppingCart, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { AdminShell } from '@/components/admin/admin-shell';
-import { formatPrice, formatDate } from '@/lib/format';
+import { ClientOnly } from '@/components/ui/client-only';
+import { ChartErrorBoundary } from '@/components/ui/chart-error-boundary';
+import { FormattedDate } from '@/components/formatted-date';
+import { formatPrice } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SalesChartLazy } from './sales-chart-lazy';
 
 interface Stats {
   revenue: number;
@@ -68,26 +71,14 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-muted-foreground">{formatPrice(stats?.revenue ?? 0)} total</span>
           </div>
           {stats ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={stats.sales}>
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(38 60% 50%)" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="hsl(38 60% 50%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(30 16% 88%)" vertical={false} />
-                <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} fontSize={11} stroke="#9ca3af" />
-                <YAxis fontSize={11} stroke="#9ca3af" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  formatter={(v: number) => [formatPrice(v), 'Sales']}
-                  labelFormatter={(d) => formatDate(d)}
-                  contentStyle={{ borderRadius: 12, border: '1px solid hsl(30 16% 88%)' }}
-                />
-                <Area type="monotone" dataKey="amount" stroke="hsl(38 60% 50%)" strokeWidth={2} fill="url(#grad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : <Skeleton className="h-[260px] w-full rounded-xl" />}
+            <ClientOnly fallback={<Skeleton className="h-[260px] w-full rounded-xl" />}>
+              <ChartErrorBoundary fallbackTitle="Sales chart failed to load">
+                <SalesChartLazy sales={stats.sales} />
+              </ChartErrorBoundary>
+            </ClientOnly>
+          ) : (
+            <Skeleton className="h-[260px] w-full rounded-xl" />
+          )}
         </div>
 
         {/* Best sellers */}
@@ -119,7 +110,7 @@ export default function AdminDashboardPage() {
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 text-sm">
                 <span className="font-mono">#{o.id.slice(0, 8).toUpperCase()}</span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{o.order_status}</span>
-                <span className="text-xs text-muted-foreground">{formatDate(o.created_at)}</span>
+                <FormattedDate iso={o.created_at} className="text-xs text-muted-foreground" />
                 <span className="font-medium">{formatPrice(Number(o.total_amount))}</span>
               </li>
             )) ?? [...Array(4)].map((_, i) => <Skeleton key={i} className="h-10" />)}

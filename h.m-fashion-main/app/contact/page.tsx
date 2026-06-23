@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { MotionAside } from '@/components/safe-motion';
 import { Mail, MapPin, Phone, Send, MessageCircle } from 'lucide-react';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,7 @@ export default function ContactPage() {
           </div>
         </Reveal>
 
-        <motion.aside
+        <MotionAside
           initial={{ opacity: 0, x: 16 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -104,7 +104,7 @@ export default function ContactPage() {
               <p className="text-sm font-medium">Chat with our concierge</p>
             </div>
           </a>
-        </motion.aside>
+        </MotionAside>
       </div>
     </PublicLayout>
   );

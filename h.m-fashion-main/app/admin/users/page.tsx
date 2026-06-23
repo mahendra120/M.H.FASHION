@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import type { UserProfile } from '@/types';
-import { formatDate } from '@/lib/format';
+import { FormattedDate } from '@/components/formatted-date';
 import { Search } from 'lucide-react';
 
 export default function AdminUsersPage() {
@@ -66,7 +66,9 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{formatDate(u.created_at)}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  <FormattedDate iso={u.created_at} />
+                </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${u.role === 'admin' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
                     {u.role === 'admin' && <Crown className="h-3 w-3" />}{u.role}

@@ -38,7 +38,12 @@ export default function ForgotPasswordPage() {
 
       // In development, the API returns the reset URL for easy testing
       if (data.resetUrl) {
-        setDevResetUrl(data.resetUrl);
+        try {
+          const url = new URL(data.resetUrl, 'http://localhost');
+          setDevResetUrl(url.pathname + url.search);
+        } catch {
+          setDevResetUrl(data.resetUrl);
+        }
       }
     } catch {
       toast.error('Network error. Please try again.');
@@ -60,7 +65,7 @@ export default function ForgotPasswordPage() {
             <div className="mt-4 rounded-lg border border-dashed border-amber-500/50 bg-amber-500/10 p-3">
               <p className="text-xs font-medium text-amber-600 dark:text-amber-400">DEV MODE — Reset Link:</p>
               <Link
-                href={devResetUrl.replace(window.location.origin, '')}
+                href={devResetUrl}
                 className="mt-1 block break-all text-xs text-accent hover:underline"
               >
                 Click here to reset your password

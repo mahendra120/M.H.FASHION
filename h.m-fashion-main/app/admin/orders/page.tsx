@@ -6,10 +6,11 @@ import { Search, ChevronDown } from 'lucide-react';
 import { AdminShell, adminFetch } from '@/components/admin/admin-shell';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatPrice, formatDate } from '@/lib/format';
+import { FormattedDate } from '@/components/formatted-date';
+import { formatPrice } from '@/lib/format';
 import { toast } from 'sonner';
 import type { Order, OrderStatus } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, SafeAnimatePresence } from '@/components/safe-motion';
 
 const STATUSES: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -75,7 +76,7 @@ export default function AdminOrdersPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <span className="font-mono font-medium">#{o.id.slice(0, 8).toUpperCase()}</span>
                 <span className="text-muted-foreground">{o.shipping_address?.full_name ?? 'Guest'}</span>
-                <span className="text-muted-foreground">{formatDate(o.created_at)}</span>
+                <FormattedDate iso={o.created_at} className="text-muted-foreground" />
                 <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[o.order_status]}`}>{o.order_status}</span>
               </div>
               <div className="flex items-center gap-3">
@@ -83,9 +84,9 @@ export default function AdminOrdersPage() {
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </div>
             </button>
-            <AnimatePresence>
+            <SafeAnimatePresence>
               {openId === o.id && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t">
+                <MotionDiv initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t">
                   <div className="grid gap-4 p-4 lg:grid-cols-2">
                     <div>
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Items</p>
@@ -126,9 +127,9 @@ export default function AdminOrdersPage() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </MotionDiv>
               )}
-            </AnimatePresence>
+            </SafeAnimatePresence>
           </div>
         ))}
       </div>

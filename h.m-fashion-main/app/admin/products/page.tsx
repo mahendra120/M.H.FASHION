@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, SafeAnimatePresence } from '@/components/safe-motion';
 import { Pencil, Plus, Search, Trash2, X, Package } from 'lucide-react';
 import { AdminShell, adminFetch } from '@/components/admin/admin-shell';
 import { Button } from '@/components/ui/button';
@@ -123,7 +123,7 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      <AnimatePresence>
+      <SafeAnimatePresence>
         {(editing || creating) && (
           <ProductForm
             product={editing}
@@ -131,7 +131,7 @@ export default function AdminProductsPage() {
             onSaved={() => { setEditing(null); setCreating(false); load(); }}
           />
         )}
-      </AnimatePresence>
+      </SafeAnimatePresence>
     </AdminShell>
   );
 }
@@ -188,12 +188,12 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-background/70 p-4 backdrop-blur"
       onClick={onClose}
     >
-      <motion.div
+      <MotionDiv
         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
         className="my-6 w-full max-w-2xl rounded-2xl bg-card p-6 lux-shadow-lg"
@@ -249,8 +249,8 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button variant="lux" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save product'}</Button>
         </div>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   );
 }
 

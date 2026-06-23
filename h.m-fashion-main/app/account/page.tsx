@@ -6,6 +6,7 @@ import { AccountShell } from '@/components/account/account-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, getClientAuthToken } from '@/components/providers/auth-provider';
+import { FormattedDate } from '@/components/formatted-date';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
@@ -78,16 +79,21 @@ export default function ProfilePage() {
           </div>
           <p className="mt-3 text-sm text-muted-foreground">Manage your account preferences and stay protected.</p>
           <div className="mt-4 space-y-2 text-sm">
-            {[
-              { label: 'Member since', value: new Date(profile?.created_at ?? user?.created_at ?? Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) },
-              { label: 'Role', value: profile?.role ?? 'customer' },
-              { label: 'Two-factor', value: 'Not enabled' },
-            ].map((row) => (
-              <div key={row.label} className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">{row.label}</span>
-                <span className="font-medium capitalize">{row.value}</span>
-              </div>
-            ))}
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Member since</span>
+              <FormattedDate
+                iso={profile?.created_at ?? user?.created_at}
+                className="font-medium capitalize"
+              />
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Role</span>
+              <span className="font-medium capitalize">{profile?.role ?? 'customer'}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Two-factor</span>
+              <span className="font-medium capitalize">Not enabled</span>
+            </div>
           </div>
         </div>
       </div>

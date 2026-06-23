@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Menu, Search, ShoppingBag, User, X, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import { Heart, Menu, Search, ShoppingBag, User, X, ChevronRight, Sparkles } from 'lucide-react';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { useAuth } from '@/components/providers/auth-provider';
 import { useCart } from '@/components/providers/cart-provider';
 import { useWishlist } from '@/components/providers/wishlist-provider';
 import { Button } from '@/components/ui/button';
-import { BRAND } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const NAV: { label: string; href: string }[] = [
@@ -16,193 +16,289 @@ const NAV: { label: string; href: string }[] = [
   { label: 'T-Shirts', href: '/shop?cat=t-shirts' },
   { label: 'Hoodies', href: '/shop?cat=hoodies' },
   { label: 'Caps', href: '/shop?cat=caps' },
-  { label: 'Mobile Covers', href: '/shop?cat=mobile-covers' },
+  { label: 'Covers', href: '/shop?cat=mobile-covers' },
   { label: 'Posters', href: '/shop?cat=posters' },
 ];
 
 export function SiteHeader() {
-  const [scrolled, setScrolled] = useState(false);
+  return <SiteHeaderInner />;
+}
+
+function SiteHeaderInner() {
+  const mounted = useHydrated();
+  const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeNavCat, setActiveNavCat] = useState('');
+  const pathname = usePathname();
   const { user } = useAuth();
   const { count, setOpen: setCartOpen } = useCart();
   const { items: wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
-  // suppress unused warning on brand
-  void BRAND;
+  const accountHref = mounted && user ? '/account' : '/login';
+
+  const isActive = useCallback(
+    (href: string) => {
+      if (!mounted || pathname !== '/shop') return false;
+      const url = new URL(href, 'http://local');
+      const hrefCat = url.searchParams.get('cat') ?? '';
+      return hrefCat === activeNavCat;
+    },
+    [mounted, pathname, activeNavCat],
+  );
+
+  // Hero / scroll styling via data attributes — avoids SSR/client className mismatches.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const sync = () => {
+      const onHome = pathname === '/';
+      const atHero = onHome && window.scrollY <= 24;
+      el.dataset.page = onHome ? 'home' : 'inner';
+      el.dataset.hero = atHero ? 'true' : 'false';
+    };
+
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+    return () => window.removeEventListener('scroll', sync);
+  }, [pathname]);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 12);
-    handler();
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
+    if (!mounted) return;
+    if (pathname === '/shop') {
+      setActiveNavCat(new URLSearchParams(window.location.search).get('cat') ?? '');
+    } else {
+      setActiveNavCat('');
+    }
+  }, [mounted, pathname]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen, mounted]);
 
   return (
     <>
       <header
-        className={cn(
-          'fixed inset-x-0 top-0 z-50 transition-all duration-500',
-          scrolled ? 'glass-strong py-2 shadow-sm' : 'bg-transparent py-4',
-        )}
+        ref={headerRef}
+        data-page={pathname === '/' ? 'home' : 'inner'}
+        data-hero="false"
+        className="site-header fixed inset-x-0 top-0 z-50 transition-all duration-500"
       >
-        {/* Top strip — hidden on small */}
-        <div className="hidden items-center justify-between border-b border-border/40 px-6 text-[11px] uppercase tracking-[0.2em] text-muted-foreground lg:flex">
-          <span>Complimentary shipping over ₹1499 · 30-day returns</span>
-          <div className="flex items-center gap-4">
-            <Link href="/account/orders" className="hover:text-foreground">Track order</Link>
-            <Link href="/contact" className="hover:text-foreground">Help</Link>
+        <div className="site-header-strip hidden border-b px-6 py-2 text-[10px] uppercase tracking-[0.22em] lg:block">
+          <div className="container-lux flex items-center justify-between">
+            <span className="inline-flex items-center gap-2">
+              <Sparkles className="h-3 w-3 text-accent" />
+              Complimentary shipping over ₹1499
+            </span>
+            <div className="flex items-center gap-5">
+              <span>30-day returns</span>
+              <Link href="/account/orders" className="site-header-strip-link transition hover:text-accent">
+                Track order
+              </Link>
+              <Link href="/contact" className="site-header-strip-link transition hover:text-accent">
+                Help
+              </Link>
+            </div>
           </div>
         </div>
 
-        <div className="container-lux flex items-center justify-between gap-3 pt-1 lg:pt-2">
-          {/* Left: mobile menu + search */}
-          <div className="flex items-center gap-1 lg:hidden">
-            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(true)} className="lg:hidden" aria-label="Open menu">
+        <div className="container-lux grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 sm:h-[4.5rem]">
+          <div className="flex items-center gap-1 justify-self-start">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMenuOpen(true)}
+              className="site-header-icon lg:hidden"
+              aria-label="Open menu"
+            >
               <Menu className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} aria-label="Search" className="lg:hidden">
-              <Search className="h-5 w-5" />
-            </Button>
+            <Link href="/" className="group flex items-center">
+              <span className="site-header-logo font-brand text-[1.65rem] font-bold leading-none transition-colors sm:text-[1.85rem]">
+                M.H<span className="text-accent">.</span>Fashion
+              </span>
+            </Link>
           </div>
 
-          {/* Center: logo */}
-          <Link href="/" className="group flex items-center gap-2">
-            <span className="font-nunito text-xl font-bold tracking-normal sm:text-2xl">
-              M.H
-              <span className="text-accent">.</span>
-              Fashion
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 lg:flex">
-            {NAV.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="group relative text-xs font-medium uppercase tracking-[0.15em] text-foreground/80 transition hover:text-foreground"
-              >
-                {item.label}
-                <span className="absolute -bottom-1 left-0 h-px w-0 bg-accent transition-all duration-300 group-hover:w-full" />
-              </Link>
-            ))}
+          <nav className="site-header-nav hidden items-center gap-1 rounded-full border p-1.5 lg:flex" aria-label="Main navigation">
+            {NAV.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  scroll={false}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'site-header-nav-link relative shrink-0 rounded-full px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
+                    active && 'site-header-nav-link-active',
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Right: actions */}
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} className="hidden lg:inline-flex" aria-label="Search">
-              <Search className="h-5 w-5" />
+          <div className="flex items-center justify-end gap-0.5 justify-self-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+              className="site-header-icon hidden sm:inline-flex"
+              aria-label="Search"
+            >
+              <Search className="h-[1.15rem] w-[1.15rem]" />
             </Button>
-            <Button asChild variant="ghost" size="icon" className="relative" aria-label="Wishlist">
+            <Button asChild variant="ghost" size="icon" className="site-header-icon relative" aria-label="Wishlist">
               <Link href="/wishlist">
-                <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && <Badge n={wishlistCount} />}
+                <Heart className="h-[1.15rem] w-[1.15rem]" />
+                <CountBadge count={wishlistCount} visible={mounted} />
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="icon" className="relative" aria-label="Account">
-              <Link href={user ? '/account' : '/login'}>
-                <User className="h-5 w-5" />
+            <Button asChild variant="ghost" size="icon" className="site-header-icon" aria-label="Account">
+              <Link href={accountHref}>
+                <User className="h-[1.15rem] w-[1.15rem]" />
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setCartOpen(true)} className="relative" aria-label="Cart">
-              <ShoppingBag className="h-5 w-5" />
-              {count > 0 && <Badge n={count} />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCartOpen(true)}
+              className="site-header-icon relative"
+              aria-label="Cart"
+            >
+              <ShoppingBag className="h-[1.15rem] w-[1.15rem]" />
+              <CountBadge count={count} visible={mounted} />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Mobile menu */}
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-
-      {/* Search */}
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {mounted && (
+        <>
+          <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} isActive={isActive} />
+          <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+        </>
+      )}
     </>
   );
 }
 
-function Badge({ n }: { n: number }) {
+/** Always rendered so server/client DOM trees match; hidden until mounted + count > 0. */
+function CountBadge({ count, visible }: { count: number; visible: boolean }) {
+  const show = visible && count > 0;
   return (
-    <motion.span
-      key={n}
-      initial={{ scale: 0.4, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground"
+    <span
+      className={cn(
+        'absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-foreground transition-opacity',
+        !show && 'pointer-events-none opacity-0',
+      )}
+      aria-hidden={!show}
     >
-      {n > 9 ? '9+' : n}
-    </motion.span>
+      {count > 9 ? '9+' : count || 0}
+    </span>
   );
 }
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({
+  open,
+  onClose,
+  isActive,
+}: {
+  open: boolean;
+  onClose: () => void;
+  isActive: (href: string) => boolean;
+}) {
+  if (!open) return null;
+
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] bg-background lg:hidden"
-        >
-          <div className="flex items-center justify-between border-b px-4 py-4">
-            <span className="font-nunito text-xl font-bold">M.H<span className="text-accent">.</span>Fashion</span>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu">
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <nav className="flex flex-col p-4">
-            {NAV.map((item) => (
+    <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl lg:hidden">
+      <div className="flex items-center justify-between border-b px-5 py-4">
+        <span className="font-brand text-2xl font-bold">
+          M.H<span className="text-accent">.</span>Fashion
+        </span>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu">
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+      <nav className="flex flex-col gap-1 p-4">
+        {NAV.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <div key={item.label}>
               <Link
-                key={item.label}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center justify-between border-b border-border/60 py-4 text-lg font-medium"
+                className={cn(
+                  'flex items-center justify-between rounded-2xl px-4 py-3.5 text-base font-medium transition',
+                  active ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary',
+                )}
               >
                 {item.label}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 opacity-50" />
               </Link>
-            ))}
-            <Link href="/about" onClick={onClose} className="py-4 text-sm uppercase tracking-wider text-muted-foreground">About</Link>
-            <Link href="/contact" onClick={onClose} className="pb-4 text-sm uppercase tracking-wider text-muted-foreground">Contact</Link>
-          </nav>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            </div>
+          );
+        })}
+        <div className="mt-4 flex gap-2 border-t border-border/60 pt-4">
+          <Link
+            href="/about"
+            onClick={onClose}
+            className="flex-1 rounded-xl bg-secondary py-3 text-center text-xs font-semibold uppercase tracking-wider"
+          >
+            About
+          </Link>
+          <Link
+            href="/contact"
+            onClick={onClose}
+            className="flex-1 rounded-xl bg-secondary py-3 text-center text-xs font-semibold uppercase tracking-wider"
+          >
+            Contact
+          </Link>
+        </div>
+      </nav>
+    </div>
   );
 }
 
 function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState('');
+  if (!open) return null;
+
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          className="fixed inset-x-0 top-0 z-[70] mx-auto max-w-3xl p-4"
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[65] bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close search"
+      />
+      <div className="fixed inset-x-0 top-0 z-[70] p-4 pt-6">
+        <form
+          action="/shop"
+          method="get"
+          className="container-lux flex max-w-2xl items-center gap-3 rounded-2xl border border-border/60 bg-card px-5 py-3.5 shadow-xl"
         >
-          <form
-            action="/shop"
-            method="get"
-            className="glass-strong flex items-center gap-3 rounded-full px-5 py-3 lux-shadow"
-          >
-            <Search className="h-5 w-5 text-muted-foreground" />
-            <input
-              autoFocus
-              name="q"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search hoodies, caps, posters…"
-              className="flex-1 bg-transparent text-base outline-none"
-            />
-            <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close search">
-              <X className="h-4 w-4" />
-            </Button>
-          </form>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <input
+            autoFocus
+            name="q"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search hoodies, caps, posters…"
+            className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+          />
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+        </form>
+      </div>
+    </>
   );
 }

@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display, Nunito } from 'next/font/google';
+import { Inter, Playfair_Display, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/components/providers/auth-provider';
-import { CartProvider } from '@/components/providers/cart-provider';
-import { WishlistProvider } from '@/components/providers/wishlist-provider';
-import { Toaster } from '@/components/ui/sonner';
-import { WhatsAppButton } from '@/components/layout/whatsapp-button';
+import { RootProviders } from '@/components/providers/root-providers';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -17,14 +13,14 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['400', '600', '700'],
 });
 
-const nunito = Nunito({
+const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-nunito',
+  variable: '--font-brand',
   display: 'swap',
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  weight: ['400', '700'],
 });
 
 const siteUrl = 'https://mhfashion.example.com';
@@ -69,17 +65,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${cormorantGaramond.variable}`}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              {children}
-              <WhatsAppButton />
-              <Toaster richColors position="top-center" />
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
+        <RootProviders>{children}</RootProviders>
       </body>
     </html>
   );

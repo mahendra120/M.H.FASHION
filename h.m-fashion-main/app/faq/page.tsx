@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionDiv, MotionSpan, SafeAnimatePresence } from '@/components/safe-motion';
 import { ChevronDown } from 'lucide-react';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { cn } from '@/lib/utils';
@@ -99,29 +99,29 @@ export default function FAQPage() {
             {filtered.map((item, i) => {
               const isOpen = open === i;
               return (
-                <motion.div key={item.q} layout className="overflow-hidden rounded-2xl border bg-card">
+                <MotionDiv key={item.q} layout className="overflow-hidden rounded-2xl border bg-card">
                   <button
                     onClick={() => setOpen(isOpen ? null : i)}
                     className="flex w-full items-center justify-between gap-4 p-5 text-left"
                   >
                     <span className="font-medium">{item.q}</span>
-                    <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                    <MotionSpan animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
                       <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    </motion.span>
+                    </MotionSpan>
                   </button>
-                  <AnimatePresence initial={false}>
+                  <SafeAnimatePresence>
                     {isOpen && (
-                      <motion.div
+                      <MotionDiv
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                       >
                         <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
-                      </motion.div>
+                      </MotionDiv>
                     )}
-                  </AnimatePresence>
-                </motion.div>
+                  </SafeAnimatePresence>
+                </MotionDiv>
               );
             })}
           </div>

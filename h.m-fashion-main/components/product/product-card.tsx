@@ -2,29 +2,37 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Heart, ShoppingBag } from 'lucide-react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice, discountPercent } from '@/lib/format';
+import { optimizeImageUrl, IMAGE_WIDTHS } from '@/lib/image-utils';
+import { colorToHex } from '@/lib/color-swatch';
 import { useCart } from '@/components/providers/cart-provider';
 import { useWishlist } from '@/components/providers/wishlist-provider';
 import type { Product } from '@/types';
 
-export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+function ProductCardInner({
+  product,
+  priority = false,
+}: {
+  product: Product;
+  index?: number;
+  priority?: boolean;
+}) {
   const { add } = useCart();
   const { has, toggle } = useWishlist();
   const [hover, setHover] = useState(false);
   const liked = has(product.id);
   const discount = discountPercent(product.price, product.original_price);
+  const primarySrc = optimizeImageUrl(product.images[0], IMAGE_WIDTHS.card);
+  const hoverSrc = product.images[1]
+    ? optimizeImageUrl(product.images[1], IMAGE_WIDTHS.card)
+    : null;
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.6, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+    <article
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="group relative flex flex-col"
@@ -32,42 +40,47 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       <Link href={`/product/${product.slug}`} className="block">
         <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
           <Image
-            src={product.images[0]}
+            src={primarySrc}
             alt={product.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(
-              'object-cover transition-all duration-700 ease-out',
-              hover ? 'scale-105 opacity-0' : 'scale-100 opacity-100',
+              'object-cover transition-opacity duration-500 ease-out',
+              hover && hoverSrc ? 'opacity-0' : 'opacity-100',
             )}
-            priority={index < 4}
+            priority={priority}
+            loading={priority ? undefined : 'lazy'}
           />
-          {product.images[1] && (
+          {hoverSrc && (
             <Image
-              src={product.images[1]}
+              src={hoverSrc}
               alt=""
               aria-hidden
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
-                'object-cover transition-all duration-700 ease-out',
-                hover ? 'scale-100 opacity-100' : 'scale-105 opacity-0',
+                'object-cover transition-opacity duration-500 ease-out',
+                hover ? 'opacity-100' : 'opacity-0',
               )}
+              loading="lazy"
             />
           )}
 
-          {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">
             {product.new_arrival && (
-              <span className="rounded-full bg-background/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">New</span>
+              <span className="rounded-full bg-background/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">
+                New
+              </span>
             )}
             {discount > 0 && (
-              <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">-{discount}%</span>
+              <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+                -{discount}%
+              </span>
             )}
           </div>
 
-          {/* Wishlist */}
           <button
+            type="button"
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               toggle(product);
@@ -75,15 +88,12 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             aria-label="Toggle wishlist"
             className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/80 backdrop-blur transition hover:scale-110"
           >
-            <motion.span animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{ duration: 0.4 }}>
-              <Heart className={cn('h-4 w-4', liked && 'fill-destructive text-destructive')} />
-            </motion.span>
+            <Heart className={cn('h-4 w-4 transition-transform', liked && 'scale-110 fill-destructive text-destructive')} />
           </button>
 
-          {/* Quick add — always visible on touch devices, hover-revealed on devices that support hover */}
           <div
             className={cn(
-              'absolute inset-x-3 bottom-3 translate-y-0 opacity-100 transition-all duration-500',
+              'absolute inset-x-3 bottom-3 translate-y-0 opacity-100 transition-all duration-300',
               'md:translate-y-4 md:opacity-0',
               hover && 'md:translate-y-0 md:opacity-100',
             )}
@@ -103,31 +113,43 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         </div>
       </Link>
 
-      <div className="mt-3 flex flex-col gap-1">
+      <div className="mt-3 space-y-1.5">
+        <Link
+          href={`/product/${product.slug}`}
+          className="line-clamp-2 text-sm font-medium leading-snug tracking-tight transition-colors hover:text-accent"
+        >
+          {product.title}
+        </Link>
         <div className="flex items-center justify-between gap-2">
-          <Link href={`/product/${product.slug}`} className="line-clamp-1 min-w-0 flex-1 text-sm font-medium tracking-tight hover:text-accent transition-colors">
-            {product.title}
-          </Link>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold">{formatPrice(product.price)}</span>
+            {product.original_price && product.original_price > product.price && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(product.original_price)}
+              </span>
+            )}
+          </div>
           <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
             <span className="text-amber-500">★</span>
             <span>{product.rating.toFixed(1)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-semibold">{formatPrice(product.price)}</span>
-          {product.original_price && product.original_price > product.price && (
-            <span className="text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
-          )}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 pt-0.5">
           {product.colors.slice(0, 4).map((c) => (
-            <span key={c} className="h-2.5 w-2.5 rounded-full border border-border bg-foreground/70" title={c} />
+            <span
+              key={c}
+              className="h-3 w-3 rounded-full border border-border/80 shadow-sm"
+              style={{ backgroundColor: colorToHex(c) }}
+              title={c}
+            />
           ))}
           {product.colors.length > 4 && (
             <span className="text-[10px] text-muted-foreground">+{product.colors.length - 4}</span>
           )}
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
+
+export const ProductCard = memo(ProductCardInner);

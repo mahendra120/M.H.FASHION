@@ -8,9 +8,10 @@ import { AccountShell } from '@/components/account/account-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth, getClientAuthToken } from '@/components/providers/auth-provider';
-import { formatPrice, formatDate } from '@/lib/format';
+import { FormattedDate } from '@/components/formatted-date';
+import { formatPrice } from '@/lib/format';
 import type { Order, OrderStatus } from '@/types';
-import { motion } from 'framer-motion';
+import { MotionDiv } from '@/components/safe-motion';
 
 const STATUS_VARIANTS: Record<OrderStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
@@ -61,7 +62,7 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order, i) => (
-            <motion.div
+            <MotionDiv
               key={order.id}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -76,7 +77,7 @@ export default function OrdersPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Placed</p>
-                    <p className="font-medium">{formatDate(order.created_at)}</p>
+                    <FormattedDate iso={order.created_at} className="font-medium" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Total</p>
@@ -105,7 +106,7 @@ export default function OrdersPage() {
                   </Link>
                 ))}
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
         </div>
       )}
