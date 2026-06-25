@@ -26,6 +26,7 @@ export interface IOrder {
   payment_status: 'pending' | 'paid' | 'failed';
   order_status: OrderStatus;
   shipping_address: IShippingAddress;
+  idempotency_key?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,11 +82,12 @@ const OrderSchema = new Schema<IOrderDocument>(
       default: 'pending',
     },
     shipping_address: { type: ShippingAddressSchema, required: true },
+    idempotency_key: { type: String, default: null },
   },
   { timestamps: true },
 );
 
-OrderSchema.index({ user_id: 1 });
+OrderSchema.index({ user_id: 1, idempotency_key: 1 }, { unique: true, sparse: true });
 OrderSchema.index({ user_email: 1 });
 OrderSchema.index({ order_status: 1 });
 OrderSchema.index({ createdAt: -1 });

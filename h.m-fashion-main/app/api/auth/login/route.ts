@@ -5,8 +5,15 @@ import { authenticateUser, useLocalUserStore } from '@/lib/auth/user-store';
 import { getPostAuthRedirect } from '@/lib/auth/redirect';
 import { authLog } from '@/lib/auth/debug';
 import { isMongoConfigured } from '@/lib/mongodb';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+
+const LOGIN_LIMIT = 10;
+const LOGIN_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 'auth-login', LOGIN_LIMIT, LOGIN_WINDOW_MS);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await req.json();
     const parsed = loginSchema.safeParse(body);

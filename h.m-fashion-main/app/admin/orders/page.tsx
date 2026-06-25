@@ -10,6 +10,7 @@ import { FormattedDate } from '@/components/formatted-date';
 import { formatPrice } from '@/lib/format';
 import { toast } from 'sonner';
 import type { Order, OrderStatus } from '@/types';
+import { canFulfillOrder } from '@/lib/order-fulfillment';
 import { MotionDiv, SafeAnimatePresence } from '@/components/safe-motion';
 
 const STATUSES: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -21,6 +22,23 @@ const STATUS_TONE: Record<OrderStatus, string> = {
   delivered: 'bg-emerald-100 text-emerald-700',
   cancelled: 'bg-red-100 text-red-700',
 };
+
+const PAYMENT_TONE: Record<string, string> = {
+  paid: 'bg-emerald-100 text-emerald-700',
+  pending: 'bg-amber-100 text-amber-700',
+  failed: 'bg-red-100 text-red-700',
+};
+
+function canSetStatus(order: Order, next: OrderStatus): boolean {
+  if (['processing', 'shipped', 'delivered'].includes(next)) {
+    return canFulfillOrder({
+      payment_method: order.payment_method,
+      payment_status: order.payment_status ?? 'pending',
+      order_status: order.order_status,
+    }).ok;
+  }
+  return true;
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -78,6 +96,11 @@ export default function AdminOrdersPage() {
                 <span className="text-muted-foreground">{o.shipping_address?.full_name ?? 'Guest'}</span>
                 <FormattedDate iso={o.created_at} className="text-muted-foreground" />
                 <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[o.order_status]}`}>{o.order_status}</span>
+                {o.payment_status && (
+                  <span className={`rounded-full px-2 py-0.5 text-xs ${PAYMENT_TONE[o.payment_status] ?? 'bg-muted'}`}>
+                    payment: {o.payment_status}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-semibold">{formatPrice(Number(o.total_amount))}</span>
@@ -111,19 +134,26 @@ export default function AdminOrdersPage() {
                         <p className="text-muted-foreground">{o.shipping_address?.email} · {o.shipping_address?.phone}</p>
                         <p className="text-muted-foreground">{o.shipping_address?.line1} {o.shipping_address?.line2}</p>
                         <p className="text-muted-foreground">{o.shipping_address?.city}, {o.shipping_address?.state} - {o.shipping_address?.pincode}</p>
-                        <p className="pt-2 text-xs">Payment: <span className="font-medium uppercase">{o.payment_method}</span></p>
+                        <p className="pt-2 text-xs">Payment: <span className="font-medium uppercase">{o.payment_method}</span>
+                          {o.payment_status && <> · <span className="font-medium">{o.payment_status}</span></>}
+                        </p>
                       </div>
                       <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Update status</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {STATUSES.map((s) => (
+                        {STATUSES.map((s) => {
+                          const blocked = !canSetStatus(o, s) && o.order_status !== s;
+                          return (
                           <button
                             key={s}
+                            disabled={blocked}
+                            title={blocked ? 'Payment not confirmed — cannot fulfill' : undefined}
                             onClick={() => updateStatus(o.id, s)}
-                            className={`rounded-full px-2.5 py-1 text-xs capitalize transition ${o.order_status === s ? `${STATUS_TONE[s]} font-medium` : 'bg-muted hover:bg-muted/70'}`}
+                            className={`rounded-full px-2.5 py-1 text-xs capitalize transition disabled:cursor-not-allowed disabled:opacity-40 ${o.order_status === s ? `${STATUS_TONE[s]} font-medium` : 'bg-muted hover:bg-muted/70'}`}
                           >
                             {s}
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

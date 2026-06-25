@@ -4,11 +4,18 @@ import { findUserByEmail } from '@/lib/auth/user-store';
 import { getJwtSecret } from '@/lib/auth/jwt';
 import { sendPasswordResetEmail } from '@/lib/email/send-reset-email';
 import { getSiteUrl } from '@/lib/site-url';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import jwt from 'jsonwebtoken';
+
+const RESET_LIMIT = 5;
+const RESET_WINDOW_MS = 60 * 60_000;
 
 const RESET_TOKEN_EXPIRY = '15m';
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 'auth-forgot-password', RESET_LIMIT, RESET_WINDOW_MS);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await req.json();
     const parsed = forgotPasswordSchema.safeParse(body);

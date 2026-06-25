@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MotionDiv, MotionP } from '@/components/safe-motion';
 import { CreditCard, Smartphone, Truck, Lock, ShieldCheck } from 'lucide-react';
@@ -48,6 +48,7 @@ export default function CheckoutPage() {
 
   const [method, setMethod] = useState<PaymentMethod>('card');
   const [placing, setPlacing] = useState(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
   const [form, setForm] = useState({
     full_name: user?.name ?? user?.user_metadata?.name ?? '',
     email: user?.email ?? '',
@@ -97,6 +98,10 @@ export default function CheckoutPage() {
     if (items.length === 0) { toast.error('Your bag is empty'); return; }
     if (!requireAuth(user, loading, '/checkout')) return;
     if (!validate()) { toast.error('Please complete the form'); return; }
+    if (placing) return;
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
     setPlacing(true);
     try {
       const token = getClientAuthToken();
@@ -121,8 +126,7 @@ export default function CheckoutPage() {
           shipping_address: form,
           payment_method: method,
           coupon_code: couponCode,
-          subtotal,
-          discount,
+          idempotency_key: idempotencyKeyRef.current,
         }),
       });
       const data = await res.json().catch(() => ({}));

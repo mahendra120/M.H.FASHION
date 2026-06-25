@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { allowDevFallbacks } from '@/lib/env';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import {
   localCreateReview,
   localListReviews,
@@ -8,7 +10,11 @@ import {
 } from '@/lib/reviews-local-store';
 import type { ReviewInput } from '@/types';
 
-function useLocalReviews() {
+const REVIEW_LIMIT = 10;
+const REVIEW_WINDOW_MS = 60 * 60_000;
+
+function useLocalReviews(): boolean {
+  if (!allowDevFallbacks()) return false;
   if (!isSupabaseConfigured) return true;
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
   return false;
@@ -35,6 +41,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 'reviews-post', REVIEW_LIMIT, REVIEW_WINDOW_MS);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   const body = (await req.json()) as ReviewInput;
   if (!body.product_id || !body.name || !body.rating) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });

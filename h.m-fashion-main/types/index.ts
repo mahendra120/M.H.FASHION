@@ -94,6 +94,7 @@ export interface Order {
   shipping: number;
   coupon_code: string | null;
   payment_method: PaymentMethod;
+  payment_status: 'pending' | 'paid' | 'failed';
   order_status: OrderStatus;
   shipping_address: {
     full_name: string;

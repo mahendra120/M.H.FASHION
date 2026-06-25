@@ -1,10 +1,20 @@
 import mongoose from 'mongoose';
 import { connectDB, isMongoConfigured } from '@/lib/mongodb';
+import { allowDevFallbacks } from '@/lib/env';
 import { Order, type IOrderDocument } from '@/models/Order';
 import { DEMO_PRODUCTS } from '@/lib/demo-catalog';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
+import { validateOrderItems } from '@/lib/order-validation';
+import { validateAndApplyCoupon, recordCouponRedemption, CouponError } from '@/lib/coupons';
+import { decrementStockAtomic, restoreStock, InsufficientStockError } from '@/lib/stock';
+import { assertFulfillmentAllowed } from '@/lib/order-fulfillment';
+import { auditLog } from '@/lib/audit-log';
+import {
+  sendOrderConfirmationEmail,
+  sendAdminOrderNotification,
+} from '@/lib/email/send-transactional';
 import {
   localCreateOrder,
   localGetOrderById,
@@ -12,12 +22,6 @@ import {
   localUpdateOrderStatus,
 } from '@/lib/orders-local-store';
 import type { Order as OrderType, OrderItem, OrderStatus, PaymentMethod } from '@/types';
-
-const DEMO_COUPONS: Record<string, { type: 'percent' | 'flat'; value: number; min: number }> = {
-  WELCOME10: { type: 'percent', value: 10, min: 0 },
-  MHF250: { type: 'flat', value: 250, min: 1999 },
-  FESTIVE25: { type: 'percent', value: 25, min: 2499 },
-};
 
 interface CatalogProduct {
   id: string;
@@ -38,6 +42,7 @@ export function serializeOrder(doc: IOrderDocument): OrderType {
     total_amount: doc.total_amount,
     coupon_code: doc.coupon_code,
     payment_method: doc.payment_method,
+    payment_status: doc.payment_status,
     order_status: doc.order_status,
     shipping_address: doc.shipping_address,
     created_at: doc.createdAt.toISOString(),
@@ -45,9 +50,11 @@ export function serializeOrder(doc: IOrderDocument): OrderType {
 }
 
 async function resolveCatalogProduct(productId: string): Promise<CatalogProduct | null> {
-  const demo = DEMO_PRODUCTS.find((p) => p.id === productId);
-  if (demo) {
-    return { id: demo.id, title: demo.title, price: demo.price, stock: demo.stock };
+  if (allowDevFallbacks()) {
+    const demo = DEMO_PRODUCTS.find((p) => p.id === productId);
+    if (demo) {
+      return { id: demo.id, title: demo.title, price: demo.price, stock: demo.stock };
+    }
   }
 
   if (!isSupabaseConfigured) return null;
@@ -70,49 +77,6 @@ async function resolveCatalogProduct(productId: string): Promise<CatalogProduct 
   }
 }
 
-async function resolveCouponDiscount(code: string, subtotal: number): Promise<{ discount: number; code: string | null }> {
-  const normalized = code.trim().toUpperCase();
-  const demo = DEMO_COUPONS[normalized];
-  if (demo && subtotal >= demo.min) {
-    const discount =
-      demo.type === 'percent'
-        ? Math.round((subtotal * demo.value) / 100)
-        : Math.min(demo.value, subtotal);
-    return { discount, code: normalized };
-  }
-
-  if (!isSupabaseConfigured) return { discount: 0, code: null };
-
-  try {
-    const { data: coupon } = await getSupabaseAdmin()
-      .from('coupons')
-      .select('*')
-      .eq('code', normalized)
-      .eq('active', true)
-      .maybeSingle();
-    if (!coupon) return { discount: 0, code: null };
-    const expired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
-    if (expired || subtotal < Number(coupon.min_order)) return { discount: 0, code: null };
-    const discount =
-      coupon.discount_type === 'percent'
-        ? Math.round((subtotal * Number(coupon.discount_value)) / 100)
-        : Math.min(Number(coupon.discount_value), subtotal);
-    return { discount, code: coupon.code };
-  } catch {
-    return { discount: 0, code: null };
-  }
-}
-
-async function decrementStock(productId: string, qty: number) {
-  if (!isSupabaseConfigured) return;
-  if (productId.startsWith('demo-')) return;
-  try {
-    await getSupabaseAdmin().rpc('decrement_stock', { p_product_id: productId, p_qty: qty });
-  } catch (error) {
-    console.warn('[orders] stock decrement skipped:', productId, error);
-  }
-}
-
 export interface CreateOrderInput {
   items: OrderItem[];
   shipping_address: OrderType['shipping_address'];
@@ -120,19 +84,32 @@ export interface CreateOrderInput {
   coupon_code?: string | null;
   user_id: string;
   user_email?: string | null;
+  idempotency_key?: string | null;
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<OrderType> {
-  const { items, shipping_address, payment_method, coupon_code, user_id, user_email } = input;
+  const {
+    shipping_address,
+    payment_method,
+    coupon_code,
+    user_id,
+    user_email,
+    idempotency_key,
+  } = input;
 
-  if (!user_id) {
-    throw new Error('Please login or sign up to continue');
-  }
-  if (!items?.length) throw new Error('Your cart is empty');
+  if (!user_id) throw new Error('Please login or sign up to continue');
   if (!shipping_address?.email?.trim()) throw new Error('Shipping email is required');
   if (!shipping_address?.full_name?.trim()) throw new Error('Full name is required');
   if (!shipping_address?.line1?.trim()) throw new Error('Address is required');
   if (!['card', 'upi', 'cod'].includes(payment_method)) throw new Error('Invalid payment method');
+
+  const items = validateOrderItems(input.items);
+
+  if (isMongoConfigured() && idempotency_key?.trim()) {
+    await connectDB();
+    const existing = await Order.findOne({ user_id, idempotency_key: idempotency_key.trim() });
+    if (existing) return serializeOrder(existing);
+  }
 
   let subtotal = 0;
   const lineItems: OrderItem[] = [];
@@ -143,7 +120,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderType> {
       throw new Error(`Product not found: ${item.title || item.product_id}`);
     }
     if (item.quantity > product.stock) {
-      throw new Error(`Insufficient stock for ${product.title}`);
+      throw new InsufficientStockError(item.product_id, product.title);
     }
     const price = Number(product.price);
     subtotal += price * item.quantity;
@@ -156,10 +133,15 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderType> {
 
   let discount = 0;
   let appliedCoupon: string | null = null;
-  if (coupon_code) {
-    const coupon = await resolveCouponDiscount(coupon_code, subtotal);
-    discount = coupon.discount;
-    appliedCoupon = coupon.code;
+  if (coupon_code?.trim()) {
+    try {
+      const coupon = await validateAndApplyCoupon(coupon_code, subtotal, user_id);
+      discount = coupon.discount;
+      appliedCoupon = coupon.code;
+    } catch (err) {
+      const message = err instanceof CouponError ? err.message : 'Invalid coupon code';
+      throw new Error(message);
+    }
   }
 
   let shipping = subtotal - discount >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
@@ -170,7 +152,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderType> {
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const orderPayload = {
-    user_id: user_id ?? null,
+    user_id,
     user_email: user_email ?? shipping_address.email,
     items: lineItems,
     subtotal,
@@ -181,39 +163,95 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderType> {
     payment_method,
     order_status: 'pending' as const,
     shipping_address,
+    idempotency_key: idempotency_key?.trim() || null,
   };
 
-  for (const item of lineItems) {
-    await decrementStock(item.product_id, item.quantity);
+  const decremented: { product_id: string; quantity: number }[] = [];
+  try {
+    for (const item of lineItems) {
+      await decrementStockAtomic(item.product_id, item.quantity, item.title);
+      decremented.push({ product_id: item.product_id, quantity: item.quantity });
+    }
+  } catch (err) {
+    for (const d of decremented) {
+      await restoreStock(d.product_id, d.quantity);
+    }
+    throw err;
   }
+
+  let order: OrderType;
 
   if (!isMongoConfigured()) {
-    if (process.env.NODE_ENV === 'development') {
+    if (allowDevFallbacks()) {
       console.warn('[orders] MONGODB_URI not set — saving order to local .data/orders.json');
-      return localCreateOrder(orderPayload);
+      order = await localCreateOrder({
+        ...orderPayload,
+        payment_status: payment_method === 'cod' ? 'pending' : 'paid',
+      });
+    } else {
+      for (const d of decremented) {
+        await restoreStock(d.product_id, d.quantity);
+      }
+      throw new Error('Order database is not configured. Set MONGODB_URI in your environment.');
     }
-    throw new Error('Order database is not configured. Set MONGODB_URI in your environment.');
+  } else {
+    await connectDB();
+    const doc = await Order.create({
+      ...orderPayload,
+      payment_status: payment_method === 'cod' ? 'pending' : 'paid',
+    });
+    order = serializeOrder(doc);
   }
 
-  await connectDB();
-  const order = await Order.create({
-    ...orderPayload,
-    payment_status: payment_method === 'cod' ? 'pending' : 'paid',
+  if (appliedCoupon) {
+    try {
+      await recordCouponRedemption(appliedCoupon, user_id, order.id);
+    } catch (err) {
+      console.error('[orders] coupon redemption record failed:', err);
+    }
+  }
+
+  const customerEmail = order.user_email ?? shipping_address.email;
+  try {
+    await sendOrderConfirmationEmail({
+      to: customerEmail,
+      orderId: order.id,
+      total: order.total_amount,
+      items: order.items.map((i) => ({ title: i.title, quantity: i.quantity, price: i.price })),
+    });
+  } catch (err) {
+    console.error('[orders] confirmation email failed:', err);
+  }
+
+  try {
+    await sendAdminOrderNotification({
+      orderId: order.id,
+      customerEmail,
+      total: order.total_amount,
+    });
+  } catch (err) {
+    console.error('[orders] admin notification failed:', err);
+  }
+
+  auditLog('order.created', {
+    orderId: order.id,
+    userId: user_id,
+    total: order.total_amount,
+    itemCount: lineItems.length,
   });
 
-  return serializeOrder(order);
+  return order;
 }
 
 export async function getOrderById(id: string): Promise<OrderType | null> {
   if (!isMongoConfigured()) {
-    return localGetOrderById(id);
+    if (allowDevFallbacks()) return localGetOrderById(id);
+    return null;
   }
   await connectDB();
-  if (!mongoose.isValidObjectId(id)) {
-    return localGetOrderById(id);
-  }
+  if (!mongoose.isValidObjectId(id)) return null;
   const order = await Order.findById(id);
-  return order ? serializeOrder(order) : localGetOrderById(id);
+  return order ? serializeOrder(order) : null;
 }
 
 export async function listOrders(opts: {
@@ -224,7 +262,8 @@ export async function listOrders(opts: {
   statusFilter?: string | null;
 }): Promise<OrderType[]> {
   if (!isMongoConfigured()) {
-    return localListOrders(opts);
+    if (allowDevFallbacks()) return localListOrders(opts);
+    return [];
   }
   await connectDB();
 
@@ -248,10 +287,34 @@ export async function listOrders(opts: {
 
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<OrderType | null> {
   if (!isMongoConfigured()) {
-    return localUpdateOrderStatus(id, status);
+    if (allowDevFallbacks()) return localUpdateOrderStatus(id, status);
+    return null;
   }
+
   await connectDB();
+  const existing = await Order.findById(id);
+  if (!existing) return null;
+
+  assertFulfillmentAllowed(
+    {
+      payment_method: existing.payment_method,
+      payment_status: existing.payment_status,
+      order_status: existing.order_status,
+    },
+    status,
+  );
+
+  const previous = existing.order_status;
   const order = await Order.findByIdAndUpdate(id, { order_status: status }, { new: true });
-  if (order) return serializeOrder(order);
-  return localUpdateOrderStatus(id, status);
+  if (!order) return null;
+
+  auditLog('order.status_updated', {
+    orderId: id,
+    from: previous,
+    to: status,
+    payment_method: order.payment_method,
+    payment_status: order.payment_status,
+  });
+
+  return serializeOrder(order);
 }

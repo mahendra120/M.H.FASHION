@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest, isUserAdmin } from '@/lib/auth/session';
 import { createOrder, listOrders } from '@/lib/orders';
-import type { Order, OrderItem, PaymentMethod } from '@/types';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { validateOrderItems } from '@/lib/order-validation';
+import type { Order, PaymentMethod } from '@/types';
+
+const ORDER_LIMIT = 10;
+const ORDER_WINDOW_MS = 60_000;
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,22 +37,30 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 'orders-post', ORDER_LIMIT, ORDER_WINDOW_MS);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = (await req.json()) as Partial<Order> & {
-      items: OrderItem[];
+      items: unknown;
       shipping_address: Order['shipping_address'];
       payment_method: PaymentMethod;
       coupon_code?: string | null;
+      idempotency_key?: string | null;
     };
 
-    if (!body.items?.length) {
-      return NextResponse.json({ error: 'Your cart is empty' }, { status: 400 });
-    }
     if (!body.shipping_address) {
       return NextResponse.json({ error: 'Shipping address is required' }, { status: 400 });
     }
     if (!body.payment_method) {
       return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
+    }
+
+    try {
+      validateOrderItems(body.items);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid cart items';
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     const authUser = await getUserFromRequest(req);
@@ -59,12 +72,13 @@ export async function POST(req: NextRequest) {
     }
 
     const order = await createOrder({
-      items: body.items,
+      items: body.items as Order['items'],
       shipping_address: body.shipping_address,
       payment_method: body.payment_method,
       coupon_code: body.coupon_code,
       user_id: authUser._id.toString(),
       user_email: authUser.email,
+      idempotency_key: body.idempotency_key,
     });
 
     return NextResponse.json({ order, message: 'Order placed successfully' });
@@ -74,6 +88,7 @@ export async function POST(req: NextRequest) {
     const status =
       message.includes('not configured') ? 503
       : message.includes('login') || message.includes('Authentication') ? 401
+      : message.includes('stock') || message.includes('Stock') ? 409
       : 400;
     return NextResponse.json({ error: message }, { status });
   }

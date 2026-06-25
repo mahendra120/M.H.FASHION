@@ -4,8 +4,15 @@ import { signAuthToken, getTokenCookieName, getTokenCookieOptions } from '@/lib/
 import { signupSchema } from '@/lib/auth/validators';
 import { registerUser } from '@/lib/auth/user-store';
 import { getPostAuthRedirect } from '@/lib/auth/redirect';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+
+const SIGNUP_LIMIT = 5;
+const SIGNUP_WINDOW_MS = 60 * 60_000;
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 'auth-signup', SIGNUP_LIMIT, SIGNUP_WINDOW_MS);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await req.json();
     const parsed = signupSchema.safeParse(body);
