@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { seedAdminAccount } from '../lib/seed-admin';
 
 function loadEnvFile() {
   const path = join(process.cwd(), '.env.local');
@@ -19,7 +18,7 @@ function loadEnvFile() {
 loadEnvFile();
 
 if (!process.env.MONGODB_URI && !process.env.NODE_ENV) {
-  (process.env as any).NODE_ENV = 'development';
+  (process.env as { NODE_ENV?: string }).NODE_ENV = 'development';
 }
 
 const email = process.env.ADMIN_SEED_EMAIL;
@@ -34,12 +33,13 @@ if (!email || !password) {
   process.exit(1);
 }
 
-seedAdminAccount({ name, email, password })
-  .then(() => {
-    console.log(`Admin account ready for ${email.toLowerCase()}`);
-    process.exit(0);
-  })
-  .catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
-  });
+async function main() {
+  const { seedAdminAccount } = await import('../lib/seed-admin');
+  await seedAdminAccount({ name, email, password });
+  console.log(`Admin account ready for ${email!.toLowerCase()}`);
+}
+
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+});
