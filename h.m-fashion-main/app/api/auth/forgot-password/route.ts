@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { forgotPasswordSchema } from '@/lib/auth/validators';
 import { findUserByEmail } from '@/lib/auth/user-store';
 import { getJwtSecret } from '@/lib/auth/jwt';
+import { sendPasswordResetEmail } from '@/lib/email/send-reset-email';
+import { getSiteUrl } from '@/lib/site-url';
 import jwt from 'jsonwebtoken';
 
 const RESET_TOKEN_EXPIRY = '15m';
@@ -22,43 +24,40 @@ export async function POST(req: NextRequest) {
     // Always return success to prevent email enumeration
     const genericResponse = NextResponse.json({
       success: true,
-      message: 'If an account exists with that email, a reset link has been generated.',
+      message: 'If an account exists with that email, a reset link has been sent.',
     });
 
     if (!user) {
       return genericResponse;
     }
 
-    // Generate a password reset token (signed JWT with short expiry)
     const resetToken = jwt.sign(
       { userId: user.id, email: user.email, purpose: 'password-reset' },
       getJwtSecret(),
       { expiresIn: RESET_TOKEN_EXPIRY },
     );
 
-    const origin = req.headers.get('origin') || req.nextUrl.origin;
-    const resetUrl = `${origin}/reset-password?token=${resetToken}`;
+    const resetUrl = `${getSiteUrl()}/reset-password?token=${resetToken}`;
 
-    // In development, log the reset link to the server console
-    if (process.env.NODE_ENV === 'development') {
-      console.log('\n╔══════════════════════════════════════════════════════╗');
-      console.log('║           PASSWORD RESET LINK (DEV ONLY)             ║');
-      console.log('╠══════════════════════════════════════════════════════╣');
-      console.log(`║ Email: ${user.email}`);
-      console.log(`║ Link:  ${resetUrl}`);
-      console.log('║ Expires in 15 minutes                                ║');
-      console.log('╚══════════════════════════════════════════════════════╝\n');
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (sendError) {
+      console.error('[auth/forgot-password] email delivery failed', sendError);
+      return NextResponse.json(
+        { error: 'Unable to send reset email. Please try again later.' },
+        { status: 503 },
+      );
     }
 
-    // In production, you would send an email here using your SMTP service.
-    // Example: await sendResetEmail(user.email, resetUrl);
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        success: true,
+        message: 'If an account exists with that email, a reset link has been sent.',
+        resetUrl,
+      });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'If an account exists with that email, a reset link has been generated.',
-      // Only include the reset URL in development for easy testing
-      ...(process.env.NODE_ENV === 'development' ? { resetUrl } : {}),
-    });
+    return genericResponse;
   } catch (error) {
     console.error('[auth/forgot-password]', error);
     return NextResponse.json(

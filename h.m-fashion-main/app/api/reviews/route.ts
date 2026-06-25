@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import {
+  localCreateReview,
+  localListReviews,
+  computeReviewStats,
+} from '@/lib/reviews-local-store';
 import type { ReviewInput } from '@/types';
+
+function useLocalReviews() {
+  if (!isSupabaseConfigured) return true;
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
+  return false;
+}
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const productId = url.searchParams.get('product_id');
   if (!productId) return NextResponse.json({ error: 'product_id required' }, { status: 400 });
+
+  if (useLocalReviews()) {
+    const reviews = await localListReviews(productId);
+    return NextResponse.json({ reviews });
+  }
+
+  const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
     .from('reviews')
     .select('id, product_id, name, rating, title, body, created_at')
@@ -25,7 +43,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 });
   }
 
-  // Insert review
+  if (useLocalReviews()) {
+    try {
+      const review = await localCreateReview({
+        product_id: body.product_id,
+        name: body.name,
+        rating: body.rating,
+        title: body.title ?? '',
+        body: body.body ?? '',
+      });
+      return NextResponse.json({ review });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not save review';
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin();
   const { data: review, error: insertErr } = await supabaseAdmin
     .from('reviews')
     .insert({
@@ -39,22 +73,20 @@ export async function POST(req: NextRequest) {
     .single();
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
-  // Recompute aggregates — durable, accurate post-insert
   const { data: agg } = await supabaseAdmin
     .rpc('recompute_product_rating', { p_product_id: body.product_id })
     .maybeSingle();
 
   if (!agg) {
-    // fallback path: compute inline
     const { data: list } = await supabaseAdmin
       .from('reviews')
       .select('rating')
       .eq('product_id', body.product_id);
     const ratings = (list ?? []).map((r) => r.rating);
-    const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+    const stats = computeReviewStats(ratings);
     await supabaseAdmin
       .from('products')
-      .update({ rating: Math.round(avg * 10) / 10, review_count: ratings.length })
+      .update(stats)
       .eq('id', body.product_id);
   }
 

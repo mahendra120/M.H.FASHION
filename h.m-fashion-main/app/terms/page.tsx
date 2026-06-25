@@ -7,7 +7,7 @@ const SECTIONS = [
   { h: '3. Orders', p: 'All orders are subject to availability and confirmation. We reserve the right to refuse or cancel any order. Prices are listed in INR and inclusive of applicable taxes.' },
   { h: '4. Payment', p: 'Payments are processed by secure third-party processors. We do not store full card details. COD orders may carry a small handling fee.' },
   { h: '5. Shipping', p: 'Estimated delivery times are indicative. Risk of loss passes to you upon delivery. Free shipping applies to orders above ₹1,499.' },
-  { h: '6. Returns', p: 'Returns are accepted within 30 days for unworn items with tags. Certain hygiene items (mobile covers, posters) may be non-returnable unless defective.' },
+  { h: '6. Returns', p: 'Returns may be accepted for unworn items with tags where applicable. Certain hygiene items (mobile covers, posters) may be non-returnable unless defective. Contact us for eligibility.' },
   { h: '7. Intellectual property', p: 'All content, imagery, branding and designs are property of M.H.Fashion. You may not reproduce, copy or distribute without written permission.' },
   { h: '8. User content', p: 'Reviews must be honest and your own. We may remove content that is abusive, off-topic or promotional.' },
   { h: '9. Limitation of liability', p: 'Our liability is limited to the value of the order. We are not liable for indirect or consequential damages.' },

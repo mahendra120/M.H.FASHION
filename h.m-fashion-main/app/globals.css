@@ -135,6 +135,27 @@
   .site-header-strip-link {
     @apply text-inherit;
   }
+  .site-header-topbar-divider {
+    @apply bg-border/70;
+  }
+  .site-header[data-page='home'][data-hero='true'] .site-header-topbar-divider {
+    background-color: rgb(255 255 255 / 0.25);
+  }
+  .site-header-topbar-link {
+    @apply text-muted-foreground hover:text-foreground;
+  }
+  .site-header[data-page='home'][data-hero='true'] .site-header-topbar-link {
+    color: rgb(255 255 255 / 0.88);
+  }
+  .site-header[data-page='home'][data-hero='true'] .site-header-topbar-link:hover {
+    @apply text-white;
+  }
+  .site-header-topbar-link-active {
+    @apply text-foreground underline decoration-accent decoration-2 underline-offset-[6px];
+  }
+  .site-header[data-page='home'][data-hero='true'] .site-header-topbar-link-active {
+    @apply text-white decoration-accent;
+  }
 
   .font-display {
     font-family: var(--font-display), Georgia, serif;

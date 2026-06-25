@@ -7,6 +7,7 @@ import {
   queryDemoProducts,
   type ProductQuery,
 } from '@/lib/demo-catalog';
+import { localListReviews, computeReviewStats } from '@/lib/reviews-local-store';
 import { optimizeImageUrl, IMAGE_WIDTHS } from '@/lib/image-utils';
 import type { Banner, Category, Product, Review } from '@/types';
 
@@ -131,8 +132,14 @@ export async function getProductBySlug(slug: string) {
   if (!isSupabaseConfigured) {
     const product = getDemoProductBySlug(slug);
     if (!product) return null;
+    const reviews = await localListReviews(product.id);
+    const stats = computeReviewStats(reviews.map((r) => r.rating));
     const related = DEMO_PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
-    return { product, reviews: [] as Review[], related };
+    return {
+      product: { ...product, ...stats },
+      reviews,
+      related,
+    };
   }
 
   const { data: product } = await supabase.from('products').select('*').eq('slug', slug).maybeSingle();

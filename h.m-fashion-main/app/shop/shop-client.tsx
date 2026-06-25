@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ChevronRight,
   Home,
@@ -18,6 +18,7 @@ import { PublicLayout } from '@/components/layout/public-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ShopLoading } from './shop-loading';
 import type { Product, Category } from '@/types';
 
 const SORTS = [
@@ -41,7 +42,24 @@ function inPriceBand(price: number, band: string) {
   return price >= min && price <= max;
 }
 
-export function ShopClient({
+export function ShopClient(props: {
+  categories: Category[];
+  initialProducts: Product[];
+  initialTotal: number;
+  initialCat?: string;
+  initialQ?: string;
+  initialSort?: string;
+  initialNew?: boolean;
+  initialTrending?: boolean;
+}) {
+  return (
+    <Suspense fallback={<ShopLoading />}>
+      <ShopClientInner {...props} />
+    </Suspense>
+  );
+}
+
+function ShopClientInner({
   categories,
   initialProducts,
   initialTotal,
@@ -61,20 +79,30 @@ export function ShopClient({
   initialTrending?: boolean;
 }) {
   const router = useRouter();
-  const cat = initialCat;
-  const q = initialQ;
-  const newFlag = initialNew;
-  const trending = initialTrending;
+  const searchParams = useSearchParams();
+  const cat = searchParams.get('cat') ?? initialCat;
+  const q = searchParams.get('q') ?? initialQ;
+  const newFlag = searchParams.get('new') === 'true' || initialNew;
+  const trending = searchParams.get('trending') === 'true' || initialTrending;
+  const urlSort = searchParams.get('sort') ?? initialSort;
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState(initialSort);
+  const [sort, setSort] = useState(urlSort);
   const [priceBand, setPriceBand] = useState('');
   const [query, setQuery] = useState(q);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const skipInitialFetch = useRef(true);
+
+  useEffect(() => {
+    setSort(urlSort);
+  }, [urlSort]);
+
+  useEffect(() => {
+    setQuery(q);
+  }, [q]);
 
   const activeCategory = useMemo(
     () => categories.find((c) => c.slug === cat),
@@ -92,10 +120,10 @@ export function ShopClient({
     setProducts(initialProducts);
     setTotal(initialTotal);
     setPage(1);
+    setSort(urlSort);
     setQuery(q);
-    setSort(initialSort);
     skipInitialFetch.current = true;
-  }, [cat, q, initialSort, newFlag, trending, initialProducts, initialTotal]);
+  }, [cat, q, urlSort, newFlag, trending, initialProducts, initialTotal]);
 
   const fetchProducts = async (pageNum: number, append: boolean) => {
     setLoading(true);

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRef } from 'react';
-import { ArrowRight, ArrowUpRight, Star, ShieldCheck, Truck, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Star, ShieldCheck, Truck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
 import { PublicLayout } from '@/components/layout/public-layout';
@@ -23,7 +23,7 @@ const STATS = [
   { value: '120K+', label: 'Happy customers' },
   { value: '4.8', label: 'Average rating' },
   { value: '48h', label: 'Metro delivery' },
-  { value: '30-day', label: 'Easy returns' },
+  { value: '24h', label: 'Dispatch time' },
 ];
 
 export function HomeClient({
@@ -103,7 +103,7 @@ export function HomeClient({
             <span key={`d${k}`}>·</span>,
             <span key={`e${k}`} className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Secure payments</span>,
             <span key={`f${k}`}>·</span>,
-            <span key={`g${k}`} className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5" /> 30-day returns</span>,
+            <span key={`g${k}`}>Premium fabrics</span>,
             <span key={`h${k}`}>·</span>,
           ])}
         </div>

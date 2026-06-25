@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Heart, Menu, Search, ShoppingBag, User, X, ChevronRight, Sparkles } from 'lucide-react';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -11,13 +11,17 @@ import { useWishlist } from '@/components/providers/wishlist-provider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const NAV: { label: string; href: string }[] = [
-  { label: 'Shop', href: '/shop' },
+const TOP_CATEGORIES: { label: string; href: string }[] = [
   { label: 'T-Shirts', href: '/shop?cat=t-shirts' },
   { label: 'Hoodies', href: '/shop?cat=hoodies' },
   { label: 'Caps', href: '/shop?cat=caps' },
-  { label: 'Covers', href: '/shop?cat=mobile-covers' },
+  { label: 'Mobile Covers', href: '/shop?cat=mobile-covers' },
   { label: 'Posters', href: '/shop?cat=posters' },
+];
+
+const NAV: { label: string; href: string }[] = [
+  { label: 'Shop', href: '/shop' },
+  ...TOP_CATEGORIES,
 ];
 
 export function SiteHeader() {
@@ -29,23 +33,12 @@ function SiteHeaderInner() {
   const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeNavCat, setActiveNavCat] = useState('');
   const pathname = usePathname();
   const { user } = useAuth();
   const { count, setOpen: setCartOpen } = useCart();
   const { items: wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
   const accountHref = mounted && user ? '/account' : '/login';
-
-  const isActive = useCallback(
-    (href: string) => {
-      if (!mounted || pathname !== '/shop') return false;
-      const url = new URL(href, 'http://local');
-      const hrefCat = url.searchParams.get('cat') ?? '';
-      return hrefCat === activeNavCat;
-    },
-    [mounted, pathname, activeNavCat],
-  );
 
   // Hero / scroll styling via data attributes — avoids SSR/client className mismatches.
   useEffect(() => {
@@ -63,15 +56,6 @@ function SiteHeaderInner() {
     window.addEventListener('scroll', sync, { passive: true });
     return () => window.removeEventListener('scroll', sync);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    if (pathname === '/shop') {
-      setActiveNavCat(new URLSearchParams(window.location.search).get('cat') ?? '');
-    } else {
-      setActiveNavCat('');
-    }
-  }, [mounted, pathname]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -96,7 +80,6 @@ function SiteHeaderInner() {
               Complimentary shipping over ₹1499
             </span>
             <div className="flex items-center gap-5">
-              <span>30-day returns</span>
               <Link href="/account/orders" className="site-header-strip-link transition hover:text-accent">
                 Track order
               </Link>
@@ -107,45 +90,29 @@ function SiteHeaderInner() {
           </div>
         </div>
 
-        <div className="container-lux grid h-[4.25rem] grid-cols-[1fr_auto_1fr] items-center gap-4 sm:h-[4.5rem]">
-          <div className="flex items-center gap-1 justify-self-start">
+        <div className="container-lux flex h-[4.25rem] items-center justify-between gap-4 sm:h-[4.5rem]">
+          <div className="flex min-w-0 flex-1 items-center gap-1 lg:gap-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMenuOpen(true)}
-              className="site-header-icon lg:hidden"
+              className="site-header-icon shrink-0 lg:hidden"
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <Link href="/" className="group flex items-center">
+            <Link href="/" className="group flex shrink-0 items-center">
               <span className="site-header-logo font-brand text-[1.65rem] font-bold leading-none transition-colors sm:text-[1.85rem]">
                 M.H<span className="text-accent">.</span>Fashion
               </span>
             </Link>
+            <span className="site-header-topbar-divider mx-4 hidden h-5 w-px lg:block" aria-hidden />
+            <Suspense fallback={<TopBarCategoryLinksFallback />}>
+              <TopBarCategoryLinks />
+            </Suspense>
           </div>
 
-          <nav className="site-header-nav hidden items-center gap-1 rounded-full border p-1.5 lg:flex" aria-label="Main navigation">
-            {NAV.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  scroll={false}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'site-header-nav-link relative shrink-0 rounded-full px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
-                    active && 'site-header-nav-link-active',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center justify-end gap-0.5 justify-self-end">
+          <div className="flex items-center justify-end gap-0.5">
             <Button
               variant="ghost"
               size="icon"
@@ -182,11 +149,68 @@ function SiteHeaderInner() {
 
       {mounted && (
         <>
-          <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} isActive={isActive} />
+          <Suspense fallback={null}>
+            <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+          </Suspense>
           <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
         </>
       )}
     </>
+  );
+}
+
+function useShopCategoryActive() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeNavCat = pathname === '/shop' ? (searchParams.get('cat') ?? '') : '';
+
+  return (href: string) => {
+    if (pathname !== '/shop') return false;
+    const url = new URL(href, 'http://local');
+    return (url.searchParams.get('cat') ?? '') === activeNavCat;
+  };
+}
+
+function TopBarCategoryLinksFallback() {
+  return (
+    <nav className="site-header-topbar hidden items-center gap-4 xl:gap-6 lg:flex" aria-label="Shop categories">
+      {TOP_CATEGORIES.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          scroll={false}
+          className="site-header-topbar-link whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors duration-200"
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function TopBarCategoryLinks() {
+  const isActive = useShopCategoryActive();
+
+  return (
+    <nav className="site-header-topbar hidden items-center gap-4 xl:gap-6 lg:flex" aria-label="Shop categories">
+      {TOP_CATEGORIES.map((item) => {
+        const active = isActive(item.href);
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            scroll={false}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'site-header-topbar-link whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
+              active && 'site-header-topbar-link-active',
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -209,12 +233,11 @@ function CountBadge({ count, visible }: { count: number; visible: boolean }) {
 function MobileMenu({
   open,
   onClose,
-  isActive,
 }: {
   open: boolean;
   onClose: () => void;
-  isActive: (href: string) => boolean;
 }) {
+  const isActive = useShopCategoryActive();
   if (!open) return null;
 
   return (

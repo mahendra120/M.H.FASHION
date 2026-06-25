@@ -11,7 +11,7 @@ import { Reveal, StaggerGroup, StaggerItem, Parallax } from '@/components/motion
 const VALUES = [
   { icon: Leaf, title: 'Considered', body: 'Every material is sourced with intent. Less waste, more wear.' },
   { icon: Star, title: 'Obsessive', body: 'We sample and resend until the drape, weight and finish are right.' },
-  { icon: ShieldCheck, title: 'Honest', body: 'Fair pricing, transparent sourcing, 30-day returns with no friction.' },
+  { icon: ShieldCheck, title: 'Honest', body: 'Fair pricing, transparent sourcing, and quality you can trust.' },
   { icon: Users, title: 'Community', body: 'Limited drops designed in conversation with our members.' },
 ];
 

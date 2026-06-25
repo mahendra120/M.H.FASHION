@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { verifyAuthToken, getTokenCookieName } from '@/lib/auth/jwt';
 import { findAuthUserById, findUserById } from '@/lib/auth/user-store';
@@ -34,6 +35,19 @@ export async function getUserFromRequest(req: NextRequest) {
 
 export function isUserAdmin(user: { role: string }): boolean {
   return user.role === 'admin';
+}
+
+/** Resolve the signed-in user in Server Components (reads httpOnly auth cookie). */
+export async function getPublicUserFromCookies() {
+  const token = cookies().get(getTokenCookieName())?.value ?? null;
+  if (!token) return null;
+
+  try {
+    const payload = verifyAuthToken(token);
+    return findUserById(payload.userId);
+  } catch {
+    return null;
+  }
 }
 
 export function extractBearerToken(req: NextRequest): string | null {

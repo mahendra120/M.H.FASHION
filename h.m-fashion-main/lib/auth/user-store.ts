@@ -48,7 +48,7 @@ export async function registerUser(input: {
   password: string;
 }): Promise<PublicUser> {
   const email = input.email.toLowerCase();
-  const role = isAdminEmail(email) ? 'admin' : 'user';
+  const role = 'user' as const;
   const hashed = await hashPassword(input.password);
 
   if (useLocalUserStore()) {
@@ -68,18 +68,6 @@ export async function registerUser(input: {
 
   const user = await User.create({ name: input.name, email, password: hashed, role });
   return mongoToPublic(user);
-}
-
-async function promoteToAdminIfNeeded(
-  normalized: string,
-  localUser: StoredUser,
-): Promise<PublicUser> {
-  if (isAdminEmail(normalized) && localUser.role !== 'admin') {
-    authLog('authenticateUser: promoting user to admin (local)', { email: normalized });
-    const updated = await localUpdateUserRole(localUser.id, 'admin');
-    return storedToPublic(updated ?? localUser);
-  }
-  return storedToPublic(localUser);
 }
 
 export async function authenticateUser(email: string, password: string): Promise<PublicUser | null> {
@@ -118,7 +106,7 @@ export async function authenticateUser(email: string, password: string): Promise
       if (updated) user = updated;
     }
 
-    return promoteToAdminIfNeeded(normalized, user);
+    return storedToPublic(user);
   }
 
   await connectDB();
@@ -144,12 +132,7 @@ export async function authenticateUser(email: string, password: string): Promise
     user.password = await hashPassword(password);
   }
 
-  if (isAdminEmail(normalized) && user.role !== 'admin') {
-    authLog('authenticateUser: promoting user to admin (mongodb)', { email: normalized });
-    user.role = 'admin';
-  }
-
-  if (needsRehash || user.isModified()) {
+  if (needsRehash) {
     await user.save();
   }
 
@@ -204,6 +187,13 @@ export async function listUsers(): Promise<PublicUser[]> {
 }
 
 export async function updateUserRole(id: string, role: 'user' | 'admin'): Promise<PublicUser | null> {
+  const existing = await findUserById(id);
+  if (!existing) return null;
+
+  if (role === 'admin' && !isAdminEmail(existing.email)) {
+    throw new Error('Cannot assign admin role: email is not in ADMIN_EMAILS allowlist');
+  }
+
   if (useLocalUserStore()) {
     const user = await localUpdateUserRole(id, role);
     return user ? storedToPublic(user) : null;

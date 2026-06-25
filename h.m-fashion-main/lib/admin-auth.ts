@@ -1,6 +1,6 @@
-/** Server-only allowlist — admin role is assigned in MongoDB when email matches. */
+/** Server-only allowlist — admin role is assigned only via seed script or explicit promotion. */
 export const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS ?? 'gohilmahendra424@gmail.com')
+  (process.env.ADMIN_EMAILS ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),

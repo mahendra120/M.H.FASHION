@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MotionDiv, MotionSpan, SafeAnimatePresence } from '@/components/safe-motion';
-import { ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, Star, Truck, RefreshCw, ShieldCheck, ZoomIn, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, Star, Truck, ShieldCheck, ZoomIn, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
 import { useCart } from '@/components/providers/cart-provider';
@@ -304,7 +304,6 @@ export function ProductDetailClient({
               {inStock ? `● In stock — ${product.stock} left` : '● Currently unavailable'}
             </p>
             <p className="flex items-center gap-2"><Truck className="h-3.5 w-3.5" /> Free shipping on orders above {formatPrice(FREE_SHIPPING_THRESHOLD)}</p>
-            <p className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5" /> 30-day easy returns</p>
             <p className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Secure, encrypted checkout</p>
           </div>
 
@@ -335,7 +334,7 @@ export function ProductDetailClient({
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li>Premium material — designed to wear and wash beautifully.</li>
                 <li>Model is 178cm and wears size {size}.</li>
-                <li>Ships in 24h · Easy 30-day returns.</li>
+                <li>Ships in 24h · Secure checkout.</li>
               </ul>
             </Reveal>
           ) : (

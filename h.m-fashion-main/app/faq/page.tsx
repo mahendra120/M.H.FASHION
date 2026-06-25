@@ -25,7 +25,7 @@ const FAQS: { q: string; a: string; cat: 'Orders' | 'Shipping' | 'Returns' | 'Pr
   {
     cat: 'Returns',
     q: 'What is your return policy?',
-    a: 'We accept returns within 30 days of delivery for unworn, unwashed items with tags intact. Initiate a return from your account and we email you a prepaid label.',
+    a: 'We accept returns on unworn, unwashed items with tags intact where applicable. Contact care@mhfashion.com or initiate a request from your account for assistance.',
   },
   {
     cat: 'Returns',

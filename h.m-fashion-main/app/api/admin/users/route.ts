@@ -52,6 +52,10 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     console.error('[admin/users PUT]', error);
+    const message = error instanceof Error ? error.message : 'Unable to update user';
+    if (message.includes('ADMIN_EMAILS allowlist')) {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: 'Unable to update user' }, { status: 500 });
   }
 }

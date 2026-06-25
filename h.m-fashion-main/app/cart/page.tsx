@@ -212,7 +212,7 @@ export default function CartPage() {
             <Button variant="lux" size="lg" className="mt-6 w-full rounded-full" onClick={proceedToCheckout}>
               Proceed to checkout <ArrowRight className="h-4 w-4" />
             </Button>
-            <p className="mt-3 text-center text-xs text-muted-foreground">Secure encrypted checkout · 30-day returns</p>
+            <p className="mt-3 text-center text-xs text-muted-foreground">Secure encrypted checkout</p>
           </div>
         </aside>
       </div>

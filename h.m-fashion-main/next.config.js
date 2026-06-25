@@ -3,7 +3,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Recharts must be transpiled; avoid optimizePackageImports (breaks lucide/webpack chunks in dev).
   transpilePackages: ['recharts'],
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -19,6 +18,21 @@ const nextConfig = {
     ],
   },
   async headers() {
+    // In dev, never cache webpack chunks — Chrome keeps immutable chunks and
+    // causes "Cannot read properties of undefined (reading 'call')" after rebuilds.
+    if (process.env.NODE_ENV !== 'production') {
+      return [
+        {
+          source: '/_next/static/:path*',
+          headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
+        },
+        {
+          source: '/_next/image',
+          headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
+        },
+      ];
+    }
+
     return [
       {
         source: '/_next/static/:path*',
