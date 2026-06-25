@@ -164,6 +164,11 @@ export async function getProductBySlug(slug: string) {
 
 export async function getAllProductSlugs() {
   if (!isSupabaseConfigured) return DEMO_PRODUCTS.map((p) => ({ slug: p.slug }));
-  const { data } = await supabase.from('products').select('slug');
-  return data ?? [];
+  try {
+    const { data, error } = await supabase.from('products').select('slug');
+    if (error || !data?.length) return DEMO_PRODUCTS.map((p) => ({ slug: p.slug }));
+    return data;
+  } catch {
+    return DEMO_PRODUCTS.map((p) => ({ slug: p.slug }));
+  }
 }
