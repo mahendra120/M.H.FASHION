@@ -2,7 +2,7 @@ import { connectDB, isMongoConfigured } from '@/lib/mongodb';
 import { User, type IUserDocument } from '@/models/User';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { authLog } from '@/lib/auth/debug';
-import { tryBootstrapAdminLogin } from '@/lib/auth/ensure-admin';
+import { tryBootstrapAdminLogin, ENV_BOOTSTRAP_ADMIN_ID, getEnvBootstrapAdminUser } from '@/lib/auth/ensure-admin';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { type PublicUser } from '@/lib/auth/client';
 import {
@@ -75,6 +75,9 @@ export async function authenticateUser(email: string, password: string): Promise
   const store = useLocalUserStore() ? 'local' : isMongoConfigured() ? 'mongodb' : 'none';
 
   authLog('authenticateUser: start', { email: normalized, store });
+  // #region agent log
+  fetch('http://127.0.0.1:7900/ingest/090f6d38-5b88-4583-9648-35b5d5060acb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e47377'},body:JSON.stringify({sessionId:'e47377',location:'user-store.ts:authenticateUser',message:'auth start',data:{store,adminEmailAllowed:isAdminEmail(normalized),hasMongo:isMongoConfigured()},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
+  // #endregion
 
   if (store === 'none') {
     authLog('authenticateUser: no auth store configured — set MONGODB_URI or run in development');
@@ -97,7 +100,11 @@ export async function authenticateUser(email: string, password: string): Promise
       role: user.role,
     });
 
-    if (!valid) return null;
+    if (!valid) {
+      const recovered = await tryBootstrapAdminLogin(normalized, password);
+      if (recovered) return recovered;
+      return null;
+    }
 
     if (needsRehash) {
       authLog('authenticateUser: rehashing legacy plain-text password (local)', { email: normalized });
@@ -125,7 +132,11 @@ export async function authenticateUser(email: string, password: string): Promise
     role: user.role,
   });
 
-  if (!valid) return null;
+  if (!valid) {
+    const recovered = await tryBootstrapAdminLogin(normalized, password);
+    if (recovered) return recovered;
+    return null;
+  }
 
   if (needsRehash) {
     authLog('authenticateUser: rehashing legacy plain-text password (mongodb)', { email: normalized });
@@ -140,6 +151,10 @@ export async function authenticateUser(email: string, password: string): Promise
 }
 
 export async function findUserById(id: string): Promise<PublicUser | null> {
+  if (id === ENV_BOOTSTRAP_ADMIN_ID) {
+    return getEnvBootstrapAdminUser();
+  }
+
   if (useLocalUserStore()) {
     const user = await localFindUserById(id);
     return user ? storedToPublic(user) : null;
