@@ -5,13 +5,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-if (!isSupabaseConfigured && process.env.NODE_ENV === 'production') {
-  throw new Error('Missing Supabase env vars. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.');
-}
-
-if (!isSupabaseConfigured && process.env.NODE_ENV === 'development') {
+// Do not throw at module load — Next.js evaluates this during `next build`
+// (Collect page data). A throw here fails the Vercel deploy with NOT_FOUND.
+// Routes use isSupabaseConfigured + demo/local fallbacks when unset.
+if (!isSupabaseConfigured) {
   console.warn(
-    '[M.H.Fashion] Supabase is not configured. Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. Pages will load with empty data until then.',
+    '[M.H.Fashion] Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. Demo catalog will be used until then.',
   );
 }
 
