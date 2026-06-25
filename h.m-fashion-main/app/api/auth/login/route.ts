@@ -11,7 +11,7 @@ const LOGIN_LIMIT = 10;
 const LOGIN_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, 'auth-login', LOGIN_LIMIT, LOGIN_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'auth-login', LOGIN_LIMIT, LOGIN_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   try {

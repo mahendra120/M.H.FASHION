@@ -10,7 +10,7 @@ const SIGNUP_LIMIT = 5;
 const SIGNUP_WINDOW_MS = 60 * 60_000;
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, 'auth-signup', SIGNUP_LIMIT, SIGNUP_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'auth-signup', SIGNUP_LIMIT, SIGNUP_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   try {

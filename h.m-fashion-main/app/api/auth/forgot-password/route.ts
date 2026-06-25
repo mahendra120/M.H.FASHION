@@ -13,7 +13,7 @@ const RESET_WINDOW_MS = 60 * 60_000;
 const RESET_TOKEN_EXPIRY = '15m';
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, 'auth-forgot-password', RESET_LIMIT, RESET_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'auth-forgot-password', RESET_LIMIT, RESET_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   try {

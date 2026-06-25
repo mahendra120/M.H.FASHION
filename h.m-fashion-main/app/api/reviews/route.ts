@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, 'reviews-post', REVIEW_LIMIT, REVIEW_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'reviews-post', REVIEW_LIMIT, REVIEW_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   const body = (await req.json()) as ReviewInput;

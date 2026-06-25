@@ -15,6 +15,10 @@ export async function GET() {
     jwt: Boolean(process.env.JWT_SECRET?.trim()),
     siteUrl: Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim()),
     adminEmails: Boolean(process.env.ADMIN_EMAILS?.trim()),
+    rateLimit:
+      process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+        ? 'upstash'
+        : 'memory',
   };
 
   const ready = missing.length === 0 && checks.mongodb && checks.supabase;

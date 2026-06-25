@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(req, 'orders-post', ORDER_LIMIT, ORDER_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'orders-post', ORDER_LIMIT, ORDER_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   try {

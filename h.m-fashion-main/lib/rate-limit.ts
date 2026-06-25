@@ -10,8 +10,8 @@ declare global {
   var __mhfRateLimit: Map<string, Bucket> | undefined;
 }
 
-const store: Map<string, Bucket> = global.__mhfRateLimit ?? new Map();
-if (!global.__mhfRateLimit) global.__mhfRateLimit = store;
+const memoryStore: Map<string, Bucket> = global.__mhfRateLimit ?? new Map();
+if (!global.__mhfRateLimit) global.__mhfRateLimit = memoryStore;
 
 export interface RateLimitResult {
   ok: boolean;
@@ -27,22 +27,12 @@ function clientIp(req: NextRequest): string {
   );
 }
 
-/**
- * Fixed-window rate limiter (per IP + route).
- * Suitable for Vercel serverless — resets per warm instance.
- */
-export function checkRateLimit(
-  req: NextRequest,
-  routeKey: string,
-  limit: number,
-  windowMs: number,
-): RateLimitResult {
-  const key = `${routeKey}:${clientIp(req)}`;
+function memoryRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
-  const bucket = store.get(key);
+  const bucket = memoryStore.get(key);
 
   if (!bucket || now >= bucket.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    memoryStore.set(key, { count: 1, resetAt: now + windowMs });
     return { ok: true, remaining: limit - 1, retryAfterSec: 0 };
   }
 
@@ -56,6 +46,66 @@ export function checkRateLimit(
 
   bucket.count += 1;
   return { ok: true, remaining: limit - bucket.count, retryAfterSec: 0 };
+}
+
+async function upstashFetch(path: string, init?: RequestInit): Promise<Response | null> {
+  const base = process.env.UPSTASH_REDIS_REST_URL?.trim().replace(/\/$/, '');
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!base || !token) return null;
+  try {
+    return await fetch(`${base}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Distributed rate limit via Upstash Redis REST (optional). */
+async function upstashRateLimit(
+  key: string,
+  limit: number,
+  windowSec: number,
+): Promise<RateLimitResult | null> {
+  const redisKey = `mhf:rl:${key}`;
+  const enc = encodeURIComponent(redisKey);
+
+  const incrRes = await upstashFetch(`/incr/${enc}`);
+  if (!incrRes?.ok) return null;
+  const count = Number(await incrRes.text());
+  if (!Number.isFinite(count)) return null;
+
+  if (count === 1) {
+    await upstashFetch(`/expire/${enc}/${windowSec}`);
+  }
+
+  if (count > limit) {
+    const ttlRes = await upstashFetch(`/ttl/${enc}`);
+    const ttl = ttlRes?.ok ? Number(await ttlRes.text()) : windowSec;
+    return { ok: false, remaining: 0, retryAfterSec: Math.max(1, ttl) };
+  }
+
+  return { ok: true, remaining: Math.max(0, limit - count), retryAfterSec: 0 };
+}
+
+/**
+ * Rate limiter: Upstash when UPSTASH_REDIS_REST_* is set, else in-memory per instance.
+ */
+export async function checkRateLimit(
+  req: NextRequest,
+  routeKey: string,
+  limit: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const key = `${routeKey}:${clientIp(req)}`;
+  const windowSec = Math.ceil(windowMs / 1000);
+  const distributed = await upstashRateLimit(key, limit, windowSec);
+  if (distributed) return distributed;
+  return memoryRateLimit(key, limit, windowMs);
 }
 
 export function rateLimitResponse(retryAfterSec: number) {

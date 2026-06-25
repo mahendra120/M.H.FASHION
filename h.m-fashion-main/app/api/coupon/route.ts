@@ -6,7 +6,7 @@ const COUPON_LIMIT = 20;
 const COUPON_WINDOW_MS = 60_000;
 
 export async function GET(req: NextRequest) {
-  const rl = checkRateLimit(req, 'coupon-get', COUPON_LIMIT, COUPON_WINDOW_MS);
+  const rl = await checkRateLimit(req, 'coupon-get', COUPON_LIMIT, COUPON_WINDOW_MS);
   if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
 
   const url = new URL(req.url);
