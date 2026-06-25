@@ -75,9 +75,6 @@ export async function authenticateUser(email: string, password: string): Promise
   const store = useLocalUserStore() ? 'local' : isMongoConfigured() ? 'mongodb' : 'none';
 
   authLog('authenticateUser: start', { email: normalized, store });
-  // #region agent log
-  fetch('http://127.0.0.1:7900/ingest/090f6d38-5b88-4583-9648-35b5d5060acb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e47377'},body:JSON.stringify({sessionId:'e47377',location:'user-store.ts:authenticateUser',message:'auth start',data:{store,adminEmailAllowed:isAdminEmail(normalized),hasMongo:isMongoConfigured()},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
-  // #endregion
 
   if (store === 'none') {
     authLog('authenticateUser: no auth store configured — set MONGODB_URI or run in development');

@@ -28,9 +28,6 @@ export async function POST(req: NextRequest) {
 
     if (!publicUser) {
       authLog('login: authentication failed', { email: email.toLowerCase() });
-      // #region agent log
-      fetch('http://127.0.0.1:7900/ingest/090f6d38-5b88-4583-9648-35b5d5060acb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e47377'},body:JSON.stringify({sessionId:'e47377',location:'login/route.ts:fail',message:'login failed',data:{store:useLocalUserStore()?'local':isMongoConfigured()?'mongodb':'none',hasAdminEmails:Boolean(process.env.ADMIN_EMAILS)},timestamp:Date.now(),hypothesisId:'H1-H4'})}).catch(()=>{});
-      // #endregion
       const store = useLocalUserStore() ? 'local' : isMongoConfigured() ? 'mongodb' : 'none';
       if (store === 'none' && !process.env.ADMIN_EMAILS?.trim()) {
         return NextResponse.json(

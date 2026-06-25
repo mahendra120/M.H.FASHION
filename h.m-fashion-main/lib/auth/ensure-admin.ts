@@ -78,9 +78,6 @@ export async function tryBootstrapAdminLogin(
 
   if (!isMongoConfigured()) {
     authLog('tryBootstrapAdminLogin: using env-bootstrap admin (no MONGODB_URI)');
-  // #region agent log
-  fetch('http://127.0.0.1:7900/ingest/090f6d38-5b88-4583-9648-35b5d5060acb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e47377'},body:JSON.stringify({sessionId:'e47377',location:'ensure-admin.ts:bootstrap',message:'env bootstrap admin',data:{hasMongo:false,hasAdminEmails:isAdminEmail(normalized)},timestamp:Date.now(),hypothesisId:'H1-H2'})}).catch(()=>{});
-  // #endregion
     return getEnvBootstrapAdminUser();
   }
 
