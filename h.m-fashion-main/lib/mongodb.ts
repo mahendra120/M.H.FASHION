@@ -2,6 +2,30 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+const getCleanedUri = (rawUri: string | undefined): string | null => {
+  if (!rawUri) return null;
+  let uri = rawUri.trim();
+  
+  // Remove surrounding double or single quotes
+  if ((uri.startsWith('"') && uri.endsWith('"')) || (uri.startsWith("'") && uri.endsWith("'"))) {
+    uri = uri.slice(1, -1).trim();
+  }
+  
+  // Remove accidental "MONGODB_URI=" prefix if pasted directly from an env file
+  if (uri.startsWith('MONGODB_URI=')) {
+    uri = uri.slice('MONGODB_URI='.length).trim();
+  }
+  
+  // Remove surrounding quotes again in case they were inside the prefix
+  if ((uri.startsWith('"') && uri.endsWith('"')) || (uri.startsWith("'") && uri.endsWith("'"))) {
+    uri = uri.slice(1, -1).trim();
+  }
+  
+  return uri;
+};
+
+const CLEANED_MONGODB_URI = getCleanedUri(MONGODB_URI);
+
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -19,12 +43,21 @@ if (!global.mongooseCache) {
 }
 
 export function isMongoConfigured(): boolean {
-  return Boolean(MONGODB_URI);
+  if (!CLEANED_MONGODB_URI) return false;
+  return CLEANED_MONGODB_URI.startsWith('mongodb://') || CLEANED_MONGODB_URI.startsWith('mongodb+srv://');
 }
 
 export async function connectDB(): Promise<typeof mongoose> {
-  if (!MONGODB_URI) {
+  const uri = CLEANED_MONGODB_URI;
+
+  if (!uri) {
     throw new Error('MONGODB_URI is not defined. Add it to your .env.local file.');
+  }
+
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    throw new Error(
+      `Invalid MONGODB_URI connection string scheme. Expected it to start with "mongodb://" or "mongodb+srv://". (Parsed value starts with: "${uri.slice(0, 15)}...")`
+    );
   }
 
   if (cached.conn) {
@@ -32,7 +65,7 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
       maxPoolSize: 10,
       minPoolSize: 1,
