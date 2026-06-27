@@ -43,8 +43,15 @@ if (!global.mongooseCache) {
 }
 
 export function isMongoConfigured(): boolean {
-  if (!CLEANED_MONGODB_URI) return false;
-  return CLEANED_MONGODB_URI.startsWith('mongodb://') || CLEANED_MONGODB_URI.startsWith('mongodb+srv://');
+  if (!CLEANED_MONGODB_URI) {
+    console.warn('[mongodb] MONGODB_URI environment variable is not set');
+    return false;
+  }
+  const isValid = CLEANED_MONGODB_URI.startsWith('mongodb://') || CLEANED_MONGODB_URI.startsWith('mongodb+srv://');
+  if (!isValid) {
+    console.warn('[mongodb] MONGODB_URI has invalid format:', CLEANED_MONGODB_URI.slice(0, 20) + '...');
+  }
+  return isValid;
 }
 
 export async function connectDB(): Promise<typeof mongoose> {

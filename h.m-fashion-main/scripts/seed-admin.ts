@@ -17,10 +17,6 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-if (!process.env.MONGODB_URI && !process.env.NODE_ENV) {
-  (process.env as { NODE_ENV?: string }).NODE_ENV = 'development';
-}
-
 const email = process.env.ADMIN_SEED_EMAIL;
 const password = process.env.ADMIN_SEED_PASSWORD;
 const name = process.env.ADMIN_SEED_NAME ?? 'Admin';

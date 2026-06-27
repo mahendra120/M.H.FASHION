@@ -23,9 +23,6 @@ function loadEnvFile() {
 }
 
 loadEnvFile();
-const env = process.env as Record<string, string | undefined>;
-env.NODE_ENV = 'production';
-env.VERCEL_ENV = 'production';
 
 console.log('\n=== M.H.Fashion Production Readiness ===\n');
 
