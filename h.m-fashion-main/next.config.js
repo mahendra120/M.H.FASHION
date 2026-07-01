@@ -4,19 +4,25 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['recharts'],
-  images: {
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 480],
-    minimumCacheTTL: 60 * 60 * 24 * 30,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.pexels.com',
-        pathname: '/**',
-      },
-    ],
-  },
+ images: {
+  formats: ['image/avif', 'image/webp'],
+  deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+  imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 480],
+  minimumCacheTTL: 60 * 60 * 24 * 30,
+  domains: ['images.pexels.com', 'img.magnific.com'],
+  remotePatterns: [
+    {
+      protocol: 'https',
+      hostname: 'images.pexels.com',
+      pathname: '/**',
+    },
+    {
+      protocol: 'https',
+      hostname: 'img.magnific.com',
+      pathname: '/**',
+    },
+  ],
+},
   async headers() {
     // In dev, never cache webpack chunks — Chrome keeps immutable chunks and
     // causes "Cannot read properties of undefined (reading 'call')" after rebuilds.
