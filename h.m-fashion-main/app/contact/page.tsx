@@ -88,7 +88,12 @@ export default function ContactPage() {
           className="space-y-4"
         >
           <ContactCard icon={<Mail className="h-5 w-5" />} label="Email" value={BRAND.email} href={`mailto:${BRAND.email}`} />
-          <ContactCard icon={<Phone className="h-5 w-5" />} label="Phone" value={BRAND.phone} href={`tel:${BRAND.phone.replace(/\s/g, '')}`} />
+          <ContactCard
+            icon={<MessageCircle className="h-5 w-5" />}
+            label="WhatsApp"
+            value="+91 75673 07487"
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+          />
           <ContactCard icon={<MapPin className="h-5 w-5" />} label="Atelier" value={BRAND.address} />
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}`}

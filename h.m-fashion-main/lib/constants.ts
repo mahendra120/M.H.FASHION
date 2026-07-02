@@ -2,13 +2,13 @@
 export const LEGAL_LAST_UPDATED = '22 June 2025';
 
 export const FREE_SHIPPING_THRESHOLD = 1499;
-export const WHATSAPP_NUMBER = '919000000000';
+export const WHATSAPP_NUMBER = '917567307487';
 export const BRAND = {
   name: 'M.H.Fashion',
   tagline: 'Wear Confidence',
   email: 'care@mhfashion.com',
-  phone: '+91 90000 00000',
-  address: 'Atelier 404, Creative District, Mumbai 400001, India',
+  phone: '',
+  address: 'ma prabhunagar -1, katargam, surat, gujarat, india',
 };
 
 export type CategorySlug =
