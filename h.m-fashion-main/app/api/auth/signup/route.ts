@@ -43,8 +43,18 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error('[auth/signup]', error);
-    const message = error instanceof Error ? error.message : 'Unable to create account. Please try again.';
-    const status = message.includes('already exists') ? 409 : message.includes('configured') ? 503 : 400;
+    const rawMessage = error instanceof Error ? error.message : 'Unable to create account. Please try again.';
+    const isDbAuthFailure = /bad auth|authentication failed/i.test(rawMessage);
+    const message = isDbAuthFailure
+      ? 'Database authentication failed. Check MONGODB_URI credentials and redeploy.'
+      : rawMessage;
+    const status = isDbAuthFailure
+      ? 503
+      : rawMessage.includes('already exists')
+      ? 409
+      : rawMessage.includes('configured')
+      ? 503
+      : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

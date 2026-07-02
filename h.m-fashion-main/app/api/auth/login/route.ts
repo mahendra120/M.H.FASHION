@@ -70,7 +70,12 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error('[auth/login] unexpected error:', error);
-    const message = error instanceof Error ? error.message : 'Unable to sign in. Please try again.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const rawMessage = error instanceof Error ? error.message : 'Unable to sign in. Please try again.';
+    const isDbAuthFailure = /bad auth|authentication failed/i.test(rawMessage);
+    const message = isDbAuthFailure
+      ? 'Authentication service unavailable. Check database credentials and redeploy.'
+      : rawMessage;
+    const status = isDbAuthFailure ? 503 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

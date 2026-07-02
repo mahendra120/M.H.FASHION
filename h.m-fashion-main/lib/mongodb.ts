@@ -85,6 +85,16 @@ export async function connectDB(): Promise<typeof mongoose> {
     cached.conn = await cached.promise;
   } catch (error) {
     cached.promise = null;
+
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      if (message.includes('bad auth') || message.includes('authentication failed')) {
+        throw new Error(
+          'MongoDB authentication failed. Verify MONGODB_URI credentials and redeploy.',
+        );
+      }
+    }
+
     throw error;
   }
 
